@@ -1,0 +1,4 @@
+a := 1;
+if true then {th := 1; th:=2; } else el := 1;
+a := 3;
+a := 4;

@@ -9,6 +9,7 @@ namespace whilelang
   PassDef expressions();
   PassDef statements();
   PassDef check_refs();
+  PassDef init_flow_graph();
 
   inline const auto parse_token =
     Skip |

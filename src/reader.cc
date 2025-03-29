@@ -1,6 +1,4 @@
 #include "internal.hh"
-// #include "passes/internal.hh"
-
 
 namespace whilelang {
 
@@ -17,6 +15,9 @@ Reader reader()
 
         // Checking
         check_refs(),
+
+        // Static analysis
+        init_flow_graph(),
       },
       whilelang::parser(),
     };

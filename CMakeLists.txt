@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.14.0)
+# cmake_minimum_required(VERSION 3.14.0)
+cmake_minimum_required(VERSION 4.0)
 project(while VERSION 0.1.0 LANGUAGES CXX)
 
 include(FetchContent)
@@ -17,6 +18,8 @@ src/parser.cc
 src/passes/expressions.cc
 src/passes/statements.cc
 src/passes/check_refs.cc
+src/passes/zero_analysis.cc
+src/utils.cc
 )
 
 target_link_libraries(while
