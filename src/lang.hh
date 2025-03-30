@@ -66,4 +66,5 @@ namespace whilelang
   inline const auto Op = TokenDef("op");
   inline const auto Prev = TokenDef("prev");
   inline const auto Post = TokenDef("post");
+  inline const auto Inst = TokenDef("inst");
 }

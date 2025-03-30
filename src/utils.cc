@@ -32,13 +32,6 @@ namespace whilelang {
     return children;
   }
 
-  Node get_last_basic_child(Node n) {
-    while (n->type() == Semi || n->type() == Stmt) {
-        n = n->back();
-    }    
-    return n;
-  }
-
   std::set<Node> get_last_basic_children(Node n) {
     std::set<Node> children;
     while (n->type() == Semi || n->type() == Stmt || n->type() == While) {
@@ -62,14 +55,28 @@ namespace whilelang {
   }
 
   void add_predecessor(std::shared_ptr<trieste::NodeMap<trieste::NodeSet>> predecessor, Node node, Node prev) {
-      auto res = predecessor->find(node);
+      while (node->type() == Semi || node->type() == Stmt) {
+          node = node->front();
+      }
 
+      auto res = predecessor->find(node);
+      
       if (res != predecessor->end()) {
           res->second.insert(prev);
       } else {
           predecessor->insert({node, {prev}});
       }
   } 
+
+//   void add_predecessor(std::shared_ptr<trieste::NodeMap<trieste::NodeSet>> predecessor, Node node, Node prev) {
+//       auto res = predecessor->find(node);
+
+//       if (res != predecessor->end()) {
+//           res->second.insert(prev);
+//       } else {
+//           predecessor->insert({node, {prev}});
+//       }
+//   } 
 
   void add_predecessor(std::shared_ptr<trieste::NodeMap<trieste::NodeSet>> predecessor, Node node, std::set<Node> prevs) {
       auto res = predecessor->find(node);

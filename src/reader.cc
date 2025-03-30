@@ -18,6 +18,7 @@ Reader reader()
 
         // Static analysis
         init_flow_graph(),
+        gather_instructions(),
       },
       whilelang::parser(),
     };
