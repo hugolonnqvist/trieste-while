@@ -1,0 +1,12 @@
+b := 0;
+while (b = 1) do {
+	while (b = 2) do {
+		first := 1;
+		first := 2;
+	};
+	while (b = 3) do {
+		second := 1;
+		second := 2;
+	};
+};
+post := 1;

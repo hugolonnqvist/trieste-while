@@ -8,29 +8,37 @@ namespace whilelang
     PassDef init_flow_graph()
     {
         auto predecessor = std::make_shared<NodeMap<std::set<Node>>>();
-        auto basic_blocks = std::vector<Node>();
+        auto instructions = std::make_shared<std::vector<Node>>();
 
         PassDef init_flow_graph =  {
             "init_flow_graph",
             statements_wf,
-            dir::bottomup | dir::once,
+            dir::topdown | dir::once,
             {
-                // Handles seqence of statements
-                In(Semi) * T(Stmt)[Prev] * T(Stmt)[Post] >>
-                    [predecessor](Match &_) -> Node
+                (T(Stmt) << T(While)[While]) * T(Stmt)[Post] >>
+                    [predecessor, instructions](Match &_) -> Node
                     {
                         auto node = get_first_basic_child(_(Post));
-                        auto prev = get_first_basic_children(_(Prev));
+                        auto prev = _(While) / BExpr;
+                        add_predecessor(predecessor, node, prev);
+
+                        return NoChange;
+                    },
+
+                In(Semi) * (T(Stmt)[Prev] << !(T(While)))* T(Stmt)[Post] >>
+                    [predecessor, instructions](Match &_) -> Node
+                    {
+                        auto node = get_first_basic_child(_(Post));
+                        auto prev = get_last_basic_children(_(Prev));
 
                         add_predecessor(predecessor, node, prev);
 
-                        
                         return NoChange;
                     },
                 
                 // Special case for if statement
                 In(Stmt) * T(If)[If] >>
-                    [predecessor](Match &_) -> Node
+                    [predecessor, instructions](Match &_) -> Node
                     {
                         auto b_expr = _(If) / BExpr;
                         auto then_stmt = _(If) / Then;
@@ -44,19 +52,19 @@ namespace whilelang
 
                 // Special case for while statement
                 In(Stmt) * T(While)[While]  >> 
-                    [predecessor](Match &_) -> Node
+                    [predecessor, instructions](Match &_) -> Node
                     {
                         auto b_expr = _(While) / BExpr;
                         auto body = _(While) / Do;
 
                         add_predecessor(predecessor, get_first_basic_child(body), b_expr);
-                        add_predecessor(predecessor, b_expr, get_last_basic_child(body));
+                        add_predecessor(predecessor, b_expr, get_last_basic_children(body));
                         
                         return NoChange;
                     },
         }};
 
-        init_flow_graph.post([predecessor](Node)  {
+        init_flow_graph.post([predecessor, instructions](Node)  {
             
             for (auto it = predecessor->begin(); it != predecessor->end(); it++) {
                 std::cout << it->first << " has predecessors: ";
@@ -64,6 +72,11 @@ namespace whilelang
                     std::cout << p << " ";
                 }
                 std::cout << std::endl;
+            }
+
+            std::cout << "Instructions" << std::endl;
+            for (auto &i : *instructions) {
+                std::cout << i << std::endl;
             }
 
             return 0;
