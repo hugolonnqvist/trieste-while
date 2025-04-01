@@ -1,14 +1,41 @@
 #include "../internal.hh"
 #include "../utils.hh"
+#include <memory>
 
 namespace whilelang
 {
     using namespace trieste;
+ 
+    auto instructions = std::make_shared<Nodes>();
+    auto vars = std::make_shared<std::set<std::string>>();
+
+    State zero_flow_function(Node inst, State incoming_state) {
+        if (inst == Assign) {
+            std::string ident = get_identifier(inst / Ident);
+            Node rhs = inst / AExpr / Expr;
+
+            if (rhs == Int) {
+                int value = get_int_value(rhs);
+                if (value == 0) {
+                    incoming_state[ident] = TZero;
+                } else {
+                    incoming_state[ident] = TNonZero;
+                }
+            } else if (rhs == Ident) {
+				std::string rhs_ident = get_identifier(rhs / Ident);
+				incoming_state[ident] = incoming_state[rhs_ident];
+            } else {
+				// Either rhs is operation or input, regerdless top is reached
+				incoming_state[ident] = TTop;
+			}
+        }
+        return incoming_state;
+    }
 
     PassDef init_flow_graph()
     {
-        auto predecessor = std::make_shared<NodeMap<std::set<Node>>>();
-        auto instructions = std::make_shared<std::vector<Node>>();
+        auto predecessor = std::make_shared<NodeMap<NodeSet>>();
+        auto successor = std::make_shared<NodeMap<NodeSet>>();
 
         PassDef init_flow_graph =  {
             "init_flow_graph",
@@ -17,21 +44,23 @@ namespace whilelang
             {
                 // Control flow inside of While
                 T(While)[While] >>
-                    [predecessor, instructions](Match &_) -> Node
+                    [predecessor, successor](Match &_) -> Node
                     {
                         auto b_expr = _(While) / BExpr;
                         auto body = _(While) / Do;
 
                         add_predecessor(predecessor, b_expr, get_last_basic_children(body));
                         add_predecessor(predecessor, get_first_basic_child(body), b_expr);
-                        instructions->push_back(b_expr);
+
+						add_predecessor(successor, b_expr, get_first_basic_child(body));
+						add_predecessor(successor, get_last_basic_children(body), b_expr);
 
                         return NoChange;
                     },
 
                 // Control flow inside of If
                 T(If)[If] >> 
-                    [predecessor, instructions](Match &_) -> Node
+                    [predecessor, successor](Match &_) -> Node
                     {
                         auto b_expr = _(If) / BExpr;
                         auto then_stmt = _(If) / Then;
@@ -40,45 +69,135 @@ namespace whilelang
                         add_predecessor(predecessor, get_first_basic_child(then_stmt), b_expr);
                         add_predecessor(predecessor, get_first_basic_child(else_stmt), b_expr);
 
-                        return NoChange;
-                    },
-                
-                // Special case of While as predecessor
-                (T(Stmt)[Prev] << T(While)[While])* T(Stmt)[Post] >>
-                    [predecessor, instructions](Match &_) -> Node
-                    {
-                        auto node = get_first_basic_child(_(Post));
-                        auto prev = _(While) / BExpr;
-
-                        add_predecessor(predecessor, node, prev);
+						add_predecessor(successor, b_expr, get_first_basic_child(then_stmt));
+						add_predecessor(successor, b_expr, get_first_basic_child(else_stmt));
 
                         return NoChange;
                     },
 
                 // General case of a sequence of statements
-                In(Semi) * (T(Stmt)[Prev] << !(T(While))) * T(Stmt)[Post] >>
-                    [predecessor, instructions](Match &_) -> Node
+                In(Semi) * T(Stmt)[Prev] * T(Stmt)[Stmt] >>
+                    [predecessor, successor](Match &_) -> Node
                     {
-                        auto node = get_first_basic_child(_(Post));
-                        auto prev = get_last_basic_children(_(Prev));
 
-                        add_predecessor(predecessor, node, prev);
+                        auto node = get_first_basic_child(_(Stmt));
+                        auto prev_nodes = get_last_basic_children(_(Prev));
+
+                        add_predecessor(predecessor, node, prev_nodes);
+
+						auto nodes = get_last_basic_children(_(Prev));
+                        add_predecessor(successor, nodes, get_first_basic_child(_(Stmt)));
+
 
                         return NoChange;
                     },
 
         }};
 
-        init_flow_graph.post([predecessor, instructions](Node)  {
-            
-            for (auto it = predecessor->begin(); it != predecessor->end(); it++) {
-                std::cout << it->first << " has predecessors: ";
-                for (auto &p : it->second) {
-                    std::cout << p << " ";
+
+        init_flow_graph.post([predecessor, successor](Node) {
+            auto state_table = NodeMap<State>();
+			// add_predecessor(predecessor, instructions->at(1), instructions->at(0));
+			// add_predecessor(successor, instructions->at(0), instructions->at(1));
+
+			// Init state, with all TTOP
+			State init_state = State();
+			for (auto it = vars->begin(); it != vars->end(); it++) {
+				init_state.insert({*it, TTop});
+			}
+
+            state_table.insert({instructions->at(0), init_state});
+
+            // Init state table
+            for (size_t i = 1; i < instructions->size(); i++) {
+                auto inst = instructions->at(i);
+
+                State state = State();
+                for (auto it = vars->begin(); it != vars->end(); it++) {
+                    state.insert({*it, TBottom});
                 }
-                std::cout << std::endl;
+                state_table.insert({inst, state});
             }
 
+            std::deque<Node> worklist;
+            worklist.push_back(instructions->at(0));
+
+            // For Zero analysis, we have the following lattice precedence, where join_table(t1, t2) = t1 join t2:
+            const JoinTable join_table = std::map<Token, std::map<Token, Token>> {
+                {TTop, {
+                    {TTop, TTop},
+                    {TZero, TTop},
+                    {TNonZero, TTop},
+                    {TBottom, TTop},
+                }},
+                {TZero, {
+                    {TTop, TTop},
+                    {TZero, TZero},
+                    {TNonZero, TTop},
+                    {TBottom, TZero},
+                }},
+                {TNonZero, {
+                    {TTop, TTop},
+                    {TZero, TTop},
+                    {TNonZero, TNonZero},
+                    {TBottom, TNonZero},
+                }},
+                {TBottom, {
+                    {TTop, TTop},
+                    {TZero, TZero},
+                    {TNonZero, TNonZero},
+                    {TBottom, TBottom},
+                }},
+            };
+
+            while (!worklist.empty()) {
+                Node inst = worklist.front();
+                worklist.pop_front();
+				
+				State incoming_state = state_table[inst];
+				State output = zero_flow_function(inst, incoming_state);
+				state_table[inst] = output;
+				
+				for (Node succ : (*successor)[inst]) {
+					State succ_state = state_table[succ];
+					State union_state = join(output, succ_state, join_table);
+
+					if (!states_equal(union_state, succ_state)) {
+						state_table[succ] = union_state;
+						worklist.push_back(succ);
+					}
+				}
+            }
+
+            // Printing
+    //         for (size_t i = 0; i < instructions->size(); i++) {
+				// logging::Debug() << "Instructions: ";
+				// logging::Debug() << i + 1 << "\n" << (*instructions)[i] << std::endl;
+                // logging::Debug() << "Predecessors: {" << std::endl;
+                // auto pred = predecessor->find(inst);
+                // if (pred == predecessor->end()) {
+                //     logging::Debug() << "No predecessors" << std::endl;
+                // } else {
+                //     for (auto it = pred->second.begin(); it != pred->second.end(); it++) {
+                //         logging::Debug() << *it << " " << std::endl;
+                //     }
+                //     logging::Debug() << "}" << std::endl;
+                // }
+                //
+                // logging::Debug() << "Sucessors: {" << std::endl;
+                // auto succ = successor->find(inst);
+                // if (succ == successor->end()) {
+                //     logging::Debug() << "No successors" << std::endl;
+                // } else {
+                //     for (auto it = succ->second.begin(); it != succ->second.end(); it++) {
+                //         logging::Debug() << *it << " " << std::endl;
+                //     }
+                //     logging::Debug() << "}" << std::endl;
+                // }
+            // }
+
+			log_instructions(*instructions);
+			log_state_table(*instructions, state_table);
             return 0;
 
         });
@@ -86,39 +205,31 @@ namespace whilelang
         return init_flow_graph;
     }
     PassDef gather_instructions() {
-
-        auto instructions = std::make_shared<std::vector<Node>>();
-
-        PassDef gather_instructions = {
+		return {
             "gather_instructions",
             statements_wf,
             dir::topdown | dir::once,
             {
                 T(Assign, Skip)[Inst] >>
-                    [instructions](Match &_) -> Node
+                    [](Match &_) -> Node
                     {
+                        Node inst = _(Inst);
                         instructions->push_back(_(Inst));
+
+                        // Gather variables
+                        if (inst->type() == Assign) {
+                            auto ident = inst / Ident;
+                            vars->insert(get_identifier(ident));
+                        }
+
                         return NoChange;
                     },
                 In(While, If) * T(BExpr)[Inst] >>
-                    [instructions](Match &_) -> Node
+                    [](Match &_) -> Node
                     {
                         instructions->push_back(_(Inst));
                         return NoChange;
                     },
-            }
-        };
-
-        gather_instructions.post([instructions](Node)  {
-            std::cout << "Instructions" << std::endl;
-            for (auto &i : *instructions) {
-                std::cout << i << std::endl;
-            }
-
-            return 0;
-
-        });
-
-        return gather_instructions;
+			}};
     }
 }

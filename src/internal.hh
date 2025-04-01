@@ -59,7 +59,7 @@ namespace whilelang
   inline const wf::Wellformed expressions_wf =
     parse_wf
     | (File   <<= ~expressions_grouping_construct)
-    | (AExpr  <<= (Int | Ident | Mul | Add | Sub | Input))
+    | (AExpr  <<= (Expr >>= (Int | Ident | Mul | Add | Sub | Input)))
     | (BExpr  <<= (True | False | Not | Equals | LT | And | Or))
     | (Add    <<= AExpr++[2])
     | (Sub    <<= AExpr++[2])

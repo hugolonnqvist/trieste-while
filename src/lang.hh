@@ -67,4 +67,12 @@ namespace whilelang
   inline const auto Prev = TokenDef("prev");
   inline const auto Post = TokenDef("post");
   inline const auto Inst = TokenDef("inst");
+
+  // Static analysis
+  inline const auto TTop = TokenDef("t_top");
+  inline const auto TBottom = TokenDef("t_bottom");
+
+  // Zero analysis
+  inline const auto TZero = TokenDef("t_zero");
+  inline const auto TNonZero = TokenDef("t_non_zero");
 }

@@ -1,2 +1,4 @@
 build
 *.trieste
+.vscode
+.cache
