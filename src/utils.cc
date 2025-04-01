@@ -152,6 +152,20 @@ namespace whilelang {
         return text;
     }
 
+    void set_all_states_to_bottom(std::shared_ptr<Nodes> instructions,
+                                  std::shared_ptr<std::set<std::string>> vars,
+                                  NodeMap<State>& state_table) {
+        for (size_t i = 1; i < instructions->size(); i++) {
+            auto inst = instructions->at(i);
+
+            State state = State();
+            for (auto it = vars->begin(); it != vars->end(); it++) {
+                state.insert({*it, TBottom});
+            }
+            state_table.insert({inst, state});
+        }
+    }
+
     bool states_equal(State s1, State s2) {
         if (s1.size() != s2.size()) {
             return false;
@@ -208,5 +222,42 @@ namespace whilelang {
             str << '\n';
         }
         logging::Debug() << str.str();
+    }
+
+    void log_predecessors_and_successors(
+        std::shared_ptr<Nodes> instructions,
+        std::shared_ptr<NodeMap<NodeSet>> predecessors,
+        std::shared_ptr<NodeMap<NodeSet>> successors) {
+        for (size_t i = 0; i < instructions->size(); i++) {
+            logging::Debug() << "Instructions: ";
+            logging::Debug() << i + 1 << "\n"
+                             << (*instructions)[i];
+
+            logging::Debug() << "Predecessors: {" << std::endl;
+
+            auto pred = predecessors->find((*instructions)[i]);
+
+            if (pred == predecessors->end()) {
+                logging::Debug() << "No predecessors" << std::endl;
+            } else {
+                for (auto it = pred->second.begin(); it != pred->second.end();
+                     it++) {
+                    logging::Debug() << *it << " " << std::endl;
+                }
+                logging::Debug() << "}" << std::endl;
+            }
+
+            logging::Debug() << "Sucessors: {" << std::endl;
+            auto succ = successors->find((*instructions)[i]);
+            if (succ == successors->end()) {
+                logging::Debug() << "No successors" << std::endl;
+            } else {
+                for (auto it = succ->second.begin(); it != succ->second.end();
+                     it++) {
+                    logging::Debug() << *it << " " << std::endl;
+                }
+                logging::Debug() << "}" << std::endl;
+            }
+        }
     }
 }

@@ -9,6 +9,39 @@ namespace whilelang {
     auto instructions = std::make_shared<Nodes>();
     auto vars = std::make_shared<std::set<std::string>>();
 
+    // For Zero analysis, we have the following lattice precedence,
+    // where join_table(t1, t2) = t1 join t2:
+    const JoinTable join_table = std::map<Token, std::map<Token, Token>>{
+        {TTop,
+         {
+             {TTop, TTop},
+             {TZero, TTop},
+             {TNonZero, TTop},
+             {TBottom, TTop},
+         }},
+        {TZero,
+         {
+             {TTop, TTop},
+             {TZero, TZero},
+             {TNonZero, TTop},
+             {TBottom, TZero},
+         }},
+        {TNonZero,
+         {
+             {TTop, TTop},
+             {TZero, TTop},
+             {TNonZero, TNonZero},
+             {TBottom, TNonZero},
+         }},
+        {TBottom,
+         {
+             {TTop, TTop},
+             {TZero, TZero},
+             {TNonZero, TNonZero},
+             {TBottom, TBottom},
+         }},
+    };
+
     State zero_flow_function(Node inst, State incoming_state) {
         if (inst == Assign) {
             std::string ident = get_identifier(inst / Ident);
@@ -93,13 +126,12 @@ namespace whilelang {
                     },
 
         }};
-        // clang-format on
 
+        // clang-format on
         init_flow_graph.post([predecessor, successor](Node) {
-            auto state_table = NodeMap<State>();
-            // add_predecessor(predecessor, instructions->at(1),
-            // instructions->at(0)); add_predecessor(successor,
-            // instructions->at(0), instructions->at(1));
+            NodeMap<State> state_table = NodeMap<State>();
+
+            set_all_states_to_bottom(instructions, vars, state_table);
 
             // Init state, with all TTOP
             State init_state = State();
@@ -109,53 +141,8 @@ namespace whilelang {
 
             state_table.insert({instructions->at(0), init_state});
 
-            // Init state table
-            for (size_t i = 1; i < instructions->size(); i++) {
-                auto inst = instructions->at(i);
-
-                State state = State();
-                for (auto it = vars->begin(); it != vars->end(); it++) {
-                    state.insert({*it, TBottom});
-                }
-                state_table.insert({inst, state});
-            }
-
             std::deque<Node> worklist;
             worklist.push_back(instructions->at(0));
-
-            // For Zero analysis, we have the following lattice precedence,
-            // where join_table(t1, t2) = t1 join t2:
-            const JoinTable join_table =
-                std::map<Token, std::map<Token, Token>>{
-                    {TTop,
-                     {
-                         {TTop, TTop},
-                         {TZero, TTop},
-                         {TNonZero, TTop},
-                         {TBottom, TTop},
-                     }},
-                    {TZero,
-                     {
-                         {TTop, TTop},
-                         {TZero, TZero},
-                         {TNonZero, TTop},
-                         {TBottom, TZero},
-                     }},
-                    {TNonZero,
-                     {
-                         {TTop, TTop},
-                         {TZero, TTop},
-                         {TNonZero, TNonZero},
-                         {TBottom, TNonZero},
-                     }},
-                    {TBottom,
-                     {
-                         {TTop, TTop},
-                         {TZero, TZero},
-                         {TNonZero, TNonZero},
-                         {TBottom, TBottom},
-                     }},
-                };
 
             while (!worklist.empty()) {
                 Node inst = worklist.front();
@@ -177,37 +164,10 @@ namespace whilelang {
             }
 
             // Printing
-            //         for (size_t i = 0; i < instructions->size(); i++) {
-            // logging::Debug() << "Instructions: ";
-            // logging::Debug() << i + 1 << "\n" << (*instructions)[i] <<
-            // std::endl;
-            // logging::Debug() << "Predecessors: {" << std::endl;
-            // auto pred = predecessor->find(inst);
-            // if (pred == predecessor->end()) {
-            //     logging::Debug() << "No predecessors" << std::endl;
-            // } else {
-            //     for (auto it = pred->second.begin(); it !=
-            //     pred->second.end(); it++) {
-            //         logging::Debug() << *it << " " << std::endl;
-            //     }
-            //     logging::Debug() << "}" << std::endl;
-            // }
-            //
-            // logging::Debug() << "Sucessors: {" << std::endl;
-            // auto succ = successor->find(inst);
-            // if (succ == successor->end()) {
-            //     logging::Debug() << "No successors" << std::endl;
-            // } else {
-            //     for (auto it = succ->second.begin(); it !=
-            //     succ->second.end(); it++) {
-            //         logging::Debug() << *it << " " << std::endl;
-            //     }
-            //     logging::Debug() << "}" << std::endl;
-            // }
-            // }
-
             log_instructions(*instructions);
             log_state_table(*instructions, state_table);
+            // log_predecessors_and_successors(instructions, predecessor,
+            //                                 successor);
             return 0;
         });
 

@@ -38,6 +38,15 @@ namespace whilelang {
 
     bool states_equal(State s1, State s2);
 
+    void set_all_states_to_bottom(std::shared_ptr<Nodes> instructions,
+                                  std::shared_ptr<std::set<std::string>> vars,
+                                  NodeMap<State>& state_table);
+
     void log_instructions(Nodes instructions);
     void log_state_table(Nodes instructions, NodeMap<State> state_table);
+
+    void log_predecessors_and_successors(
+        std::shared_ptr<Nodes> instructions,
+        std::shared_ptr<NodeMap<NodeSet>> predecessors,
+        std::shared_ptr<NodeMap<NodeSet>> successors);
 }
