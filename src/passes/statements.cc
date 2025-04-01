@@ -1,11 +1,10 @@
 #include "../internal.hh"
 
-namespace whilelang
-{
+namespace whilelang {
     using namespace trieste;
 
-    PassDef statements()
-    {
+    // clang-format off
+    PassDef statements() {
         return {
             "statements",
             statements_wf,
@@ -191,5 +190,4 @@ namespace whilelang
 
             }};
     }
-
 }

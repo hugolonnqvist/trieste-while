@@ -1,11 +1,10 @@
 #include "../internal.hh"
 
-namespace whilelang
-{
+namespace whilelang {
     using namespace trieste;
 
-    PassDef check_refs()
-    {
+    // clang-format off
+    PassDef check_refs() {
         return {
             "check_refs",
             statements_wf,
@@ -22,7 +21,6 @@ namespace whilelang
                         }
                         return NoChange;
                     },
-            }};
+           }};
     }
-
 }

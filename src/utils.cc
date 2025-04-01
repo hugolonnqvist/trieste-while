@@ -1,12 +1,13 @@
-#include "lang.hh"
 #include "utils.hh"
+
+#include "lang.hh"
 
 namespace whilelang {
     using namespace trieste;
 
-	void append_to_set(std::set<Node> &set, std::set<Node> new_set) {
-		set.insert(new_set.begin(), new_set.end());
-	}
+    void append_to_set(std::set<Node>& set, std::set<Node> new_set) {
+        set.insert(new_set.begin(), new_set.end());
+    }
 
     Node get_first_basic_child(Node n) {
         while (n->type().in({Semi, Stmt, While, If})) {
@@ -22,38 +23,37 @@ namespace whilelang {
             n = n->front();
         }
 
-		if (n == While) {
-			children.insert(n / BExpr);
-		} else {
+        if (n == While) {
+            children.insert(n / BExpr);
+        } else {
             children.insert(n);
         }
 
         return children;
-		
-	}
-	Node get_last_basic_child(Node n) {
-		while (n->type().in({Semi, Stmt, While})) {
-			n = n->back();
-		}
-		return n;
-	}
+    }
+    Node get_last_basic_child(Node n) {
+        while (n->type().in({Semi, Stmt, While})) {
+            n = n->back();
+        }
+        return n;
+    }
 
     std::set<Node> get_last_basic_children(const Node n) {
         std::set<Node> children;
-		Node curr = n;
+        Node curr = n;
 
         while (curr->type().in({Semi, Stmt})) {
             curr = curr->back();
         }
 
-		if (curr == While) {
-			children.insert(curr / BExpr);
-		} else if (curr == If) {
+        if (curr == While) {
+            children.insert(curr / BExpr);
+        } else if (curr == If) {
             auto then_last_nodes = get_last_basic_children(curr / Then);
             auto else_last_nodes = get_last_basic_children(curr / Else);
 
-			append_to_set(children, then_last_nodes);
-			append_to_set(children, else_last_nodes);
+            append_to_set(children, then_last_nodes);
+            append_to_set(children, else_last_nodes);
         } else {
             children.insert(curr);
         }
@@ -61,8 +61,9 @@ namespace whilelang {
         return children;
     }
 
-
-    void add_predecessor(std::shared_ptr<trieste::NodeMap<trieste::NodeSet>> predecessor, Node node, Node prev) {
+    void add_predecessor(
+        std::shared_ptr<trieste::NodeMap<trieste::NodeSet>> predecessor,
+        Node node, Node prev) {
         auto res = predecessor->find(node);
 
         if (res != predecessor->end()) {
@@ -72,7 +73,9 @@ namespace whilelang {
         }
     }
 
-    void add_predecessor(std::shared_ptr<trieste::NodeMap<trieste::NodeSet>> predecessor, Node node, std::set<Node> prevs) {
+    void add_predecessor(
+        std::shared_ptr<trieste::NodeMap<trieste::NodeSet>> predecessor,
+        Node node, std::set<Node> prevs) {
         auto res = predecessor->find(node);
 
         if (res != predecessor->end()) {
@@ -84,36 +87,40 @@ namespace whilelang {
         }
     }
 
+    void add_predecessor(
+        std::shared_ptr<trieste::NodeMap<trieste::NodeSet>> predecessor,
+        std::set<Node> nodes, Node prev) {
+        for (auto it = nodes.begin(); it != nodes.end(); it++) {
+            auto res = predecessor->find(*it);
 
-    void add_predecessor(std::shared_ptr<trieste::NodeMap<trieste::NodeSet>> predecessor, std::set<Node> nodes, Node prev) {
-		for (auto it = nodes.begin(); it != nodes.end(); it++) {
-			auto res = predecessor->find(*it);
+            if (res != predecessor->end()) {
+                res->second.insert(prev);
+            } else {
+                predecessor->insert({*it, {prev}});
+            }
+        }
+    }
 
-			if (res != predecessor->end()) {
-				res->second.insert(prev);
-			} else {
-				predecessor->insert({*it, {prev}});
-			}
-		}
-	}
-
-    State get_incoming_state(Node node, std::set<Node> predecessor, NodeMap<State> state_table, JoinTable join_table) {
+    State get_incoming_state(Node node, std::set<Node> predecessor,
+                             NodeMap<State> state_table, JoinTable join_table) {
         std::vector<State> states = std::vector<State>();
 
         for (auto it = predecessor.begin(); it != predecessor.end(); it++) {
             auto res = state_table.find(*it);
 
             if (res == state_table.end()) {
-                throw std::runtime_error("Predecessor not found in state table");
-            } 
+                throw std::runtime_error(
+                    "Predecessor not found in state table");
+            }
             State state = res->second;
             states.push_back(state);
         }
 
         State init_state = state_table.find(node)->second;
-        return std::accumulate(states.begin(), states.end(), init_state, [join_table](State s1, State s2) {
-            return join(s1, s2, join_table);
-        });
+        return std::accumulate(states.begin(), states.end(), init_state,
+                               [join_table](State s1, State s2) {
+                                   return join(s1, s2, join_table);
+                               });
     }
 
     State join(State s1, State s2, JoinTable join_table) {
@@ -121,13 +128,14 @@ namespace whilelang {
             throw std::runtime_error("State sizes do not match");
         }
         State result_state = State();
-        for (auto it1 = s1.begin(), it2 = s2.begin(); it1 != s1.end() && it2 != s2.end(); ++it1, ++it2) {
+        for (auto it1 = s1.begin(), it2 = s2.begin();
+             it1 != s1.end() && it2 != s2.end(); ++it1, ++it2) {
             if (it1->first != it2->first) {
                 throw std::runtime_error("State keys do not match");
             }
             Token tok1 = it1->second;
             Token tok2 = it2->second;
-            
+
             Token result = join_table[tok1][tok2];
             result_state.insert({it1->first, result});
         }
@@ -144,62 +152,61 @@ namespace whilelang {
         return text;
     }
 
-	bool states_equal(State s1, State s2) {
-		if (s1.size() != s2.size()) {
-			return false;
-		}
+    bool states_equal(State s1, State s2) {
+        if (s1.size() != s2.size()) {
+            return false;
+        }
 
-		for (auto it1 = s1.begin(), it2 = s2.begin(); it1 != s1.end() && it2 != s2.end(); ++it1, ++it2) {
-			if (it1->first != it2->first || it1->second != it2->second) {
-				return false;
-			}
-		}
+        for (auto it1 = s1.begin(), it2 = s2.begin();
+             it1 != s1.end() && it2 != s2.end(); ++it1, ++it2) {
+            if (it1->first != it2->first || it1->second != it2->second) {
+                return false;
+            }
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	void log_instructions(Nodes instructions) {
-		logging::Debug() << "Instructions: ";
-		for (size_t i = 0; i < instructions.size(); i++) {
-		  logging::Debug() << i + 1 << "\n" << instructions[i] << std::endl;
-		}
-	}
+    void log_instructions(Nodes instructions) {
+        logging::Debug() << "Instructions: ";
+        for (size_t i = 0; i < instructions.size(); i++) {
+            logging::Debug() << i + 1 << "\n" << instructions[i] << std::endl;
+        }
+    }
 
-	std::string lattice_to_str(Token val) {
-		if (val == TTop) {
-			return "T";
-		} else if (val == TZero) {
-			return "0";
-		} else if (val == TBottom) {
-			return "⊥";
-		} else {
-			return "N";
-		} 			
-	}
+    std::string lattice_to_str(Token val) {
+        if (val == TTop) {
+            return "T";
+        } else if (val == TZero) {
+            return "0";
+        } else if (val == TBottom) {
+            return "⊥";
+        } else {
+            return "N";
+        }
+    }
 
-	void log_state_table(Nodes instructions, NodeMap<State> state_table) {
-		int width = 8;
-		int number_of_vars = state_table[instructions[0]].size();
-		std::stringstream str;
+    void log_state_table(Nodes instructions, NodeMap<State> state_table) {
+        int width = 8;
+        int number_of_vars = state_table[instructions[0]].size();
+        std::stringstream str;
 
-		str << std::left << std::setw(width) << "";
-		for (const auto& [key, _] : state_table[instructions[0]]) {
-			str << std::setw(width) << key;
-		}
-	
-		str << std::endl;
-		str << std::string(width * (number_of_vars + 1), '-') << std::endl;
+        str << std::left << std::setw(width) << "";
+        for (const auto& [key, _] : state_table[instructions[0]]) {
+            str << std::setw(width) << key;
+        }
 
-		// print values:
-		for (size_t i = 0; i < instructions.size(); i++) {
+        str << std::endl;
+        str << std::string(width * (number_of_vars + 1), '-') << std::endl;
 
-			str << std::setw(width) << i + 1;
-			for (const auto& [key, val] : state_table[instructions[i]]) {
-				str << std::setw(width) << lattice_to_str(val);
-
-			}
-			str << '\n';
-		}
-		logging::Debug() << str.str();
-	}
+        // print values:
+        for (size_t i = 0; i < instructions.size(); i++) {
+            str << std::setw(width) << i + 1;
+            for (const auto& [key, val] : state_table[instructions[i]]) {
+                str << std::setw(width) << lattice_to_str(val);
+            }
+            str << '\n';
+        }
+        logging::Debug() << str.str();
+    }
 }

@@ -1,9 +1,9 @@
 #include "../internal.hh"
 
-namespace whilelang
-{
+namespace whilelang {
     using namespace trieste;
 
+	// clang-format off
     PassDef expressions()
     {
         auto UNHANDLED = --In(BExpr, AExpr);
@@ -147,5 +147,4 @@ namespace whilelang
                     },
             }};
     }
-
 }

@@ -1,0 +1,12 @@
+---
+BasedOnStyle: Google
+IndentWidth: 4
+NamespaceIndentation: All
+
+---
+Language: Cpp
+# Force pointers to the type for C++.
+DerivePointerAlignment: false
+PointerAlignment: Left
+FixNamespaceComments: false
+...
