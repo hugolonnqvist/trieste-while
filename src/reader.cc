@@ -1,8 +1,11 @@
+#include "control_flow.hh"
 #include "internal.hh"
+#include "utils.hh"
 
 namespace whilelang {
     using namespace trieste;
 
+    auto control_flow = std::make_shared<ControlFlow>();
     Reader reader() {
         return {
             "while",
@@ -15,8 +18,8 @@ namespace whilelang {
                 check_refs(),
 
                 // Static analysis
-                gather_instructions(),
-                init_flow_graph(),
+                gather_instructions(control_flow),
+                init_flow_graph(control_flow),
             },
             whilelang::parser(),
         };

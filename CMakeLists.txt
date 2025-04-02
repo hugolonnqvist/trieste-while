@@ -20,6 +20,8 @@ src/passes/statements.cc
 src/passes/check_refs.cc
 src/passes/zero_analysis.cc
 src/utils.cc
+src/control_flow.cc
+src/data-flow-analysis.cc
 )
 
 target_link_libraries(while

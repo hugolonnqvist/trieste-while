@@ -1,5 +1,8 @@
 #pragma once
+#include "control_flow.hh"
+#include "data-flow-analysis.hh"
 #include "lang.hh"
+#include "utils.hh"
 
 namespace whilelang {
     using namespace trieste;
@@ -8,8 +11,8 @@ namespace whilelang {
     PassDef expressions();
     PassDef statements();
     PassDef check_refs();
-    PassDef init_flow_graph();
-    PassDef gather_instructions();
+    PassDef init_flow_graph(std::shared_ptr<ControlFlow> control_flow);
+    PassDef gather_instructions(std::shared_ptr<ControlFlow> control_flow);
 
     // clang-format off
 	inline const auto parse_token =

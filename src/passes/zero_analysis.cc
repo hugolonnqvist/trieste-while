@@ -1,17 +1,14 @@
-#include <memory>
-
+#include "../control_flow.hh"
+#include "../data-flow-analysis.hh"
 #include "../internal.hh"
 #include "../utils.hh"
 
 namespace whilelang {
     using namespace trieste;
 
-    auto instructions = std::make_shared<Nodes>();
-    auto vars = std::make_shared<std::set<std::string>>();
-
     // For Zero analysis, we have the following lattice precedence,
     // where join_table(t1, t2) = t1 join t2:
-    const JoinTable join_table = std::map<Token, std::map<Token, Token>>{
+    JoinTable join_table = std::map<Token, std::map<Token, Token>>{
         {TTop,
          {
              {TTop, TTop},
@@ -41,21 +38,18 @@ namespace whilelang {
              {TBottom, TBottom},
          }},
     };
+    auto z_analysis = std::make_shared<DataFlowAnalaysis>(join_table);
 
-    State zero_flow_function(Node inst, State incoming_state) {
+    State flow_function(Node inst, State incoming_state) {
         if (inst == Assign) {
             std::string ident = get_identifier(inst / Ident);
             Node rhs = inst / AExpr / Expr;
 
             if (rhs == Int) {
-                int value = get_int_value(rhs);
-                if (value == 0) {
-                    incoming_state[ident] = TZero;
-                } else {
-                    incoming_state[ident] = TNonZero;
-                }
+                incoming_state[ident] =
+                    get_int_value(rhs) == 0 ? TZero : TNonZero;
             } else if (rhs == Ident) {
-                std::string rhs_ident = get_identifier(rhs / Ident);
+                std::string rhs_ident = get_identifier(rhs);
                 incoming_state[ident] = incoming_state[rhs_ident];
             } else {
                 // Either rhs is operation or input, regerdless top is reached
@@ -65,10 +59,7 @@ namespace whilelang {
         return incoming_state;
     }
 
-    PassDef init_flow_graph() {
-        auto predecessor = std::make_shared<NodeMap<NodeSet>>();
-        auto successor = std::make_shared<NodeMap<NodeSet>>();
-
+    PassDef init_flow_graph(std::shared_ptr<ControlFlow> control_flow) {
         // clang-format off
         PassDef init_flow_graph =  {
             "init_flow_graph",
@@ -77,50 +68,47 @@ namespace whilelang {
             {
                 // Control flow inside of While
                 T(While)[While] >>
-                    [predecessor, successor](Match &_) -> Node
+                    [control_flow](Match &_) -> Node
                     {
                         auto b_expr = _(While) / BExpr;
                         auto body = _(While) / Do;
 
-                        add_predecessor(predecessor, b_expr, get_last_basic_children(body));
-                        add_predecessor(predecessor, get_first_basic_child(body), b_expr);
+                        control_flow->add_predecessor(b_expr, get_last_basic_children(body));
+                        control_flow->add_predecessor(get_first_basic_child(body), b_expr);
 
-						add_predecessor(successor, b_expr, get_first_basic_child(body));
-						add_predecessor(successor, get_last_basic_children(body), b_expr);
+						control_flow->add_successor(b_expr, get_first_basic_child(body));
+						control_flow->add_successor(get_last_basic_children(body), b_expr);
 
                         return NoChange;
                     },
 
                 // Control flow inside of If
                 T(If)[If] >> 
-                    [predecessor, successor](Match &_) -> Node
+                    [control_flow](Match &_) -> Node
                     {
                         auto b_expr = _(If) / BExpr;
                         auto then_stmt = _(If) / Then;
                         auto else_stmt = _(If) / Else;
 
-                        add_predecessor(predecessor, get_first_basic_child(then_stmt), b_expr);
-                        add_predecessor(predecessor, get_first_basic_child(else_stmt), b_expr);
+                        control_flow->add_predecessor(get_first_basic_child(then_stmt), b_expr);
+                        control_flow->add_predecessor(get_first_basic_child(else_stmt), b_expr);
 
-						add_predecessor(successor, b_expr, get_first_basic_child(then_stmt));
-						add_predecessor(successor, b_expr, get_first_basic_child(else_stmt));
-
+						control_flow->add_successor(b_expr, get_first_basic_child(then_stmt));
+						control_flow->add_successor(b_expr, get_first_basic_child(else_stmt));
+				
                         return NoChange;
                     },
 
                 // General case of a sequence of statements
-                In(Semi) * T(Stmt)[Prev] * T(Stmt)[Stmt] >>
-                    [predecessor, successor](Match &_) -> Node
+                In(Semi) * T(Stmt)[Prev] * T(Stmt)[Post] >>
+                    [control_flow](Match &_) -> Node
                     {
 
-                        auto node = get_first_basic_child(_(Stmt));
-                        auto prev_nodes = get_last_basic_children(_(Prev));
+						auto prev = _(Prev);
+						auto post = _(Post);
 
-                        add_predecessor(predecessor, node, prev_nodes);
-
-						auto nodes = get_last_basic_children(_(Prev));
-                        add_predecessor(successor, nodes, get_first_basic_child(_(Stmt)));
-
+						control_flow->add_predecessor(get_first_basic_child(post), get_last_basic_children(prev));
+						control_flow->add_successor(get_last_basic_children(prev), get_first_basic_child(post));
 
                         return NoChange;
                     },
@@ -128,78 +116,72 @@ namespace whilelang {
         }};
 
         // clang-format on
-        init_flow_graph.post([predecessor, successor](Node) {
-            NodeMap<State> state_table = NodeMap<State>();
+        init_flow_graph.post([control_flow](Node) {
+            const Nodes instructions = control_flow->get_instructions();
+            z_analysis->set_all_states_to_bottom(instructions);
 
-            set_all_states_to_bottom(instructions, vars, state_table);
+            // Initial state has all unknown, i.e. all Top
+            z_analysis->set_state(instructions[0], TTop);
 
-            // Init state, with all TTOP
-            State init_state = State();
-            for (auto it = vars->begin(); it != vars->end(); it++) {
-                init_state.insert({*it, TTop});
-            }
-
-            state_table.insert({instructions->at(0), init_state});
-
-            std::deque<Node> worklist;
-            worklist.push_back(instructions->at(0));
+            std::deque<Node> worklist{instructions[0]};
 
             while (!worklist.empty()) {
                 Node inst = worklist.front();
                 worklist.pop_front();
 
-                State incoming_state = state_table[inst];
-                State output = zero_flow_function(inst, incoming_state);
-                state_table[inst] = output;
+                State incoming_state = z_analysis->get_state_in_table(inst);
+                State outgoing_state = flow_function(inst, incoming_state);
+                z_analysis->set_state_in_table(inst, outgoing_state);
 
-                for (Node succ : (*successor)[inst]) {
-                    State succ_state = state_table[succ];
-                    State union_state = join(output, succ_state, join_table);
+                for (Node succ : control_flow->successors(inst)) {
+                    State succ_state = z_analysis->get_state_in_table(succ);
+                    State new_succ_state =
+                        z_analysis->join(outgoing_state, succ_state);
 
-                    if (!states_equal(union_state, succ_state)) {
-                        state_table[succ] = union_state;
+                    if (new_succ_state != succ_state) {
+                        z_analysis->set_state_in_table(succ, new_succ_state);
                         worklist.push_back(succ);
                     }
                 }
             }
 
-            // Printing
-            log_instructions(*instructions);
-            log_state_table(*instructions, state_table);
-            // log_predecessors_and_successors(instructions, predecessor,
-            //                                 successor);
+            control_flow->log_instructions();
+            z_analysis->log_state_table(instructions);
+
             return 0;
         });
 
         return init_flow_graph;
     }
     // clang-format off
-    PassDef gather_instructions() {
+    PassDef gather_instructions(std::shared_ptr<ControlFlow> control_flow) {
 		return {
             "gather_instructions",
             statements_wf,
             dir::topdown | dir::once,
             {
-                T(Assign, Skip)[Inst] >>
-                    [](Match &_) -> Node
+                T(Assign, Skip, Output)[Inst] >>
+                    [control_flow](Match &_) -> Node
                     {
                         Node inst = _(Inst);
-                        instructions->push_back(_(Inst));
+						control_flow->add_instruction(inst);
 
                         // Gather variables
                         if (inst->type() == Assign) {
                             auto ident = inst / Ident;
-                            vars->insert(get_identifier(ident));
+							z_analysis->add_var(ident);
                         }
 
                         return NoChange;
                     },
+
                 In(While, If) * T(BExpr)[Inst] >>
-                    [](Match &_) -> Node
+                    [control_flow](Match &_) -> Node
                     {
-                        instructions->push_back(_(Inst));
+                        control_flow->add_instruction(_(Inst));
                         return NoChange;
                     },
-			}};
+			}
+		};
     }
 }
