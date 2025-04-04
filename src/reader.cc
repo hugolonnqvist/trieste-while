@@ -5,8 +5,9 @@
 namespace whilelang {
     using namespace trieste;
 
-    auto control_flow = std::make_shared<ControlFlow>();
     Reader reader() {
+		auto control_flow = std::make_shared<ControlFlow>();
+
         return {
             "while",
             {
@@ -17,9 +18,13 @@ namespace whilelang {
                 // Checking
                 check_refs(),
 
+                // Normalization
+                normalization(),
+
                 // Static analysis
                 gather_instructions(control_flow),
                 init_flow_graph(control_flow),
+
             },
             whilelang::parser(),
         };

@@ -3,6 +3,9 @@ MIN_CMAKE_STANDARD=3.5
 
 all: build/while
 
+run:
+	./build/while build ./examples/$(program).while && cat ./$(program).trieste
+
 build/while: build
 	cd build; ninja install
 
@@ -12,5 +15,8 @@ build:
 
 fuzz:
 	./build/while test -f
+
+clean:
+	rm *.trieste
 
 .PHONY: clean all build/while test

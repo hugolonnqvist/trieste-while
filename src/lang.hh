@@ -75,4 +75,8 @@ namespace whilelang {
     // Zero analysis
     inline const auto TZero = TokenDef("t_zero");
     inline const auto TNonZero = TokenDef("t_non_zero");
+
+    inline const auto Normalize = TokenDef("normalize");
+    inline const auto Atom = TokenDef("atom");
+    inline const auto Instructions = TokenDef("instructions", flag::symtab);
 }

@@ -10,10 +10,17 @@ namespace whilelang {
             statements_wf,
             dir::bottomup | dir::once,
             {
+				// Make sure there is always one semi stmt
+                T(Program) << (T(Stmt)[Stmt] << !T(Semi)) >>
+                    [](Match &_) -> Node
+                    {
+                        return Program << (Stmt << (Semi << _(Stmt)));
+                    },
+
                 T(File) << (T(Stmt)[Stmt] * End) >>
                     [](Match &_) -> Node
                     {
-                        return Program << _(Stmt);
+                        return Reapply << (Program << _(Stmt));
                     },
 
                 T(Skip)[Skip] >>
@@ -185,6 +192,13 @@ namespace whilelang {
                     [](Match &_) -> Node
                     {
                         return Error << (ErrorAst << _(Expr))
+                                     << (ErrorMsg ^ "Expected statement");
+                    },
+
+				T(File) << End >>
+                    [](Match &_) -> Node
+                    {
+                        return Error << (ErrorAst << _(File))
                                      << (ErrorMsg ^ "Expected statement");
                     },
 

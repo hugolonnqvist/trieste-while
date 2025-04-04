@@ -11,8 +11,10 @@ namespace whilelang {
     PassDef expressions();
     PassDef statements();
     PassDef check_refs();
+    PassDef normalization();
     PassDef init_flow_graph(std::shared_ptr<ControlFlow> control_flow);
     PassDef gather_instructions(std::shared_ptr<ControlFlow> control_flow);
+    PassDef constant_propagation();
 
     // clang-format off
 	inline const auto parse_token =
@@ -67,11 +69,11 @@ namespace whilelang {
 		| (Add    <<= AExpr++[2])
 		| (Sub    <<= AExpr++[2])
 		| (Mul    <<= AExpr++[2])
-		| (LT     <<= AExpr * AExpr)
-		| (Equals <<= AExpr * AExpr)
+		| (LT     <<= (Lhs >>= AExpr) * (Rhs >>= AExpr))
+		| (Equals <<= (Lhs >>= AExpr) * (Rhs >>= AExpr))
 		| (And    <<= BExpr++[2])
 		| (Or     <<= BExpr++[2])
-		| (Not    <<= BExpr)
+		| (Not    <<= (Expr >>= BExpr))
 		| (Semi   <<= (expressions_grouping_construct - Semi)++[1])
 		| (If     <<= ~expressions_grouping_construct)
 		| (Then   <<= ~expressions_grouping_construct)
@@ -87,9 +89,9 @@ namespace whilelang {
 
     inline const wf::Wellformed statements_wf =
 		(expressions_wf - Group - Paren - Do - Then - Else)
-		| (Top <<= ~Program)
+		| (Top <<= Program)
 		| (Program <<= Stmt)
-		| (Stmt <<= (Skip | Assign | While | If | Output | Semi))
+		| (Stmt <<= (Stmt >>= (Skip | Assign | While | If | Output | Semi)))
 		| (If <<= BExpr * (Then >>= Stmt) * (Else >>= Stmt))
 		| (While <<= BExpr * (Do >>= Stmt))
 		| (Assign <<= Ident * AExpr)[Ident]
@@ -101,4 +103,18 @@ namespace whilelang {
 	inline const wf::Wellformed eval_wf =
 		statements_wf - Program;
 
+	inline const wf::Wellformed normalization_wf = 
+		statements_wf
+		| (Program <<= Instructions)
+		| (Instructions <<= Stmt)
+		| (AExpr  <<= (Expr >>= (Mul | Add | Sub)))
+		| (Add <<= (Lhs >>= Atom) * (Rhs >>= Atom))
+		| (Sub <<= (Lhs >>= Atom) * (Rhs >>= Atom))
+		| (Mul <<= (Lhs >>= Atom) * (Rhs >>= Atom))
+		| (LT <<= (Lhs >>= (AExpr | Atom)) * (Rhs >>= (AExpr | Atom)))
+		| (Equals <<= (Lhs >>= (AExpr | Atom)) * (Rhs >>= (AExpr | Atom)))
+		| (Assign <<= Ident * (Rhs >>= (AExpr | Atom)))[Ident]
+		| (Output <<= (Atom | AExpr))
+		| (Atom <<= (Expr >>= (Int | Ident | Input)))
+		;
 }

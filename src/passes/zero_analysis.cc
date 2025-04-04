@@ -43,7 +43,7 @@ namespace whilelang {
     State flow_function(Node inst, State incoming_state) {
         if (inst == Assign) {
             std::string ident = get_identifier(inst / Ident);
-            Node rhs = inst / AExpr / Expr;
+            Node rhs = inst / Rhs / Expr;
 
             if (rhs == Int) {
                 incoming_state[ident] =
@@ -63,7 +63,7 @@ namespace whilelang {
         // clang-format off
         PassDef init_flow_graph =  {
             "init_flow_graph",
-            statements_wf,
+            normalization_wf,
             dir::topdown | dir::once,
             {
                 // Control flow inside of While
@@ -155,9 +155,9 @@ namespace whilelang {
     }
     // clang-format off
     PassDef gather_instructions(std::shared_ptr<ControlFlow> control_flow) {
-		return {
+		PassDef gather_instructions = {
             "gather_instructions",
-            statements_wf,
+            normalization_wf,
             dir::topdown | dir::once,
             {
                 T(Assign, Skip, Output)[Inst] >>
@@ -183,5 +183,14 @@ namespace whilelang {
                     },
 			}
 		};
+
+		gather_instructions.post([control_flow](Node) {
+			if (control_flow->get_instructions().empty()) {
+				throw std::runtime_error("Unexpected, missing instructions");
+			}
+			
+			return 0;	
+		});
+		return gather_instructions;
     }
 }

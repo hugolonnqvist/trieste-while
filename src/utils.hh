@@ -12,5 +12,7 @@ namespace whilelang {
 
     int get_int_value(const Node& node);
 
+	int calc_arithmetic_op(Token op, int x, int y);
+
     std::string get_identifier(const Node& node);
 }
