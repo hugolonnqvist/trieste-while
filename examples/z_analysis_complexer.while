@@ -3,17 +3,22 @@ if (b = 1) then {
 	if (b = 2) then {
 		th1 := 1;
 		th1 := 2;
+		th1 := 13;
 	} else {
 		el1 := 1;
 		el1 := 2;
+		b:= 0;
+		th1 := 13;
 	}
 } else {
 	if (b = 3) then {
 		th2 := 1;
 		th2 := 2;
+		th1 := 13;
 	} else {
 		el2 := 1;
 		el2 := 2;
+		th1 := 13;
 	}
 };
 post := 3;

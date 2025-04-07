@@ -1,4 +1,5 @@
 #include "control_flow.hh"
+#include "utils.hh"
 
 namespace whilelang {
     using namespace trieste;
@@ -6,9 +7,14 @@ namespace whilelang {
     // Public
     ControlFlow::ControlFlow() {
         this->instructions = Nodes();
+		this->vars = Vars();
         this->predecessor = NodeMap<NodeSet>();
         this->successor = NodeMap<NodeSet>();
     }
+
+    void ControlFlow::add_var(Node ident) {
+        vars.insert(get_identifier(ident));
+    };
 
     void ControlFlow::add_predecessor(Node node, Node prev) {
         append_to_nodemap(predecessor, node, prev);

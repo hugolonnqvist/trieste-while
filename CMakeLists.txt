@@ -17,12 +17,14 @@ src/main.cc
 src/parser.cc
 src/utils.cc
 src/control_flow.cc
-src/data-flow-analysis.cc
+src/data_flow_analysis.cc
 src/passes/expressions.cc
 src/passes/statements.cc
 src/passes/check_refs.cc
-src/passes/zero_analysis.cc
 src/passes/normalization.cc
+src/passes/gather_instructions.cc
+src/passes/control_flow.cc
+src/passes/zero_analysis.cc
 src/passes/constant_propagation.cc
 )
 

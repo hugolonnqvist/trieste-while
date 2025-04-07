@@ -1,6 +1,6 @@
 #pragma once
 #include "control_flow.hh"
-#include "data-flow-analysis.hh"
+#include "data_flow_analysis.hh"
 #include "lang.hh"
 #include "utils.hh"
 
@@ -12,9 +12,10 @@ namespace whilelang {
     PassDef statements();
     PassDef check_refs();
     PassDef normalization();
-    PassDef init_flow_graph(std::shared_ptr<ControlFlow> control_flow);
     PassDef gather_instructions(std::shared_ptr<ControlFlow> control_flow);
-    PassDef constant_propagation();
+    PassDef init_flow_graph(std::shared_ptr<ControlFlow> control_flow);
+    PassDef z_analysis(std::shared_ptr<ControlFlow> control_flow);
+    PassDef constant_propagation(std::shared_ptr<ControlFlow> control_flow);
 
     // clang-format off
 	inline const auto parse_token =

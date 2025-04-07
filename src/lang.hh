@@ -68,6 +68,12 @@ namespace whilelang {
     inline const auto Post = TokenDef("post");
     inline const auto Inst = TokenDef("inst");
 
+
+	// Normalization
+    inline const auto Normalize = TokenDef("normalize");
+    inline const auto Atom = TokenDef("atom");
+    inline const auto Instructions = TokenDef("instructions", flag::symtab);
+
     // Static analysis
     inline const auto TTop = TokenDef("t_top");
     inline const auto TBottom = TokenDef("t_bottom");
@@ -76,7 +82,6 @@ namespace whilelang {
     inline const auto TZero = TokenDef("t_zero");
     inline const auto TNonZero = TokenDef("t_non_zero");
 
-    inline const auto Normalize = TokenDef("normalize");
-    inline const auto Atom = TokenDef("atom");
-    inline const auto Instructions = TokenDef("instructions", flag::symtab);
-}
+	// Constant propagation analysis
+    inline const auto TConstant = TokenDef("t_constant", flag::print);
+} 

@@ -4,13 +4,20 @@
 namespace whilelang {
     using namespace trieste;
 
+    using Vars = std::set<std::string>;
+
     class ControlFlow {
        public:
         ControlFlow();
 
         const NodeSet successors(Node node) { return successor[node]; };
+
         const Nodes get_instructions() { return instructions; };
+        const Vars get_vars() { return vars; };
+
         void add_instruction(Node inst) { instructions.push_back(inst); };
+
+        void add_var(Node ident);
 
         void add_predecessor(Node node, Node prev);
         void add_predecessor(Node node, NodeSet prev);
@@ -25,6 +32,7 @@ namespace whilelang {
 
        private:
         Nodes instructions;
+        Vars vars;
         NodeMap<NodeSet> predecessor;
         NodeMap<NodeSet> successor;
 

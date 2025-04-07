@@ -51,20 +51,74 @@ namespace whilelang {
         return std::stoi(text);
     }
 
-	int calc_arithmetic_op(Token op, int x, int y) {
-		if (op == Add) {
-			return x + y;
-		} else if (op == Sub) {
-			return x - y;
-		} else if (op == Mul) {
-			return x * y;
-		} else {
-			throw std::runtime_error("Not a valid operator");
-		}
-	}	
+    int calc_arithmetic_op(Token op, int x, int y) {
+        if (op == Add) {
+            return x + y;
+        } else if (op == Sub) {
+            return x - y;
+        } else if (op == Mul) {
+            return x * y;
+        } else {
+            throw std::runtime_error("Not a valid operator");
+        }
+    }
 
     std::string get_identifier(const Node& node) {
         std::string text(node->location().view());
         return text;
+    }
+
+    std::string cp_analysis_tok_to_str(StateValue val) {
+        if (val.type == TTop) {
+            return "?";
+        } else if (val.type == TConstant) {
+            return std::to_string(val.value);
+        } else if (val.type == TBottom) {
+            return "⊥";
+        } else {
+            throw std::runtime_error("Unexpected token type");
+        }
+    }
+
+    void log_cp_state_table(const Nodes instructions,
+                            NodeMap<State> state_table) {
+        int width = 8;
+        int number_of_vars = state_table[instructions[0]].size();
+        std::stringstream str;
+
+        str << std::left << std::setw(width) << "";
+        for (const auto& [key, _] : state_table[instructions[0]]) {
+            str << std::setw(width) << key;
+        }
+
+        str << std::endl;
+        str << std::string(width * (number_of_vars + 1), '-') << std::endl;
+
+        for (size_t i = 0; i < instructions.size(); i++) {
+            str << std::setw(width) << i + 1;
+            for (const auto& [_, st] : state_table[instructions[i]]) {
+                str << std::setw(width) << cp_analysis_tok_to_str(st);
+                // str << std::setw(width) << symbol << std::endl;
+            }
+            str << '\n';
+        }
+        logging::Debug() << str.str();
+    }
+
+    bool state_equals(State s1, State s2) {
+        for (auto it1 = s1.begin(), it2 = s2.begin();
+             it1 != s1.end() && it2 != s2.end(); ++it1, ++it2) {
+            auto [key1, val1] = *it1;
+            auto [key2, val2] = *it2;
+
+            if (key1 != key2) {
+                throw std::runtime_error("State keys do not match");
+            }
+
+            if ((val1.type != val2.type) || (val1.value != val2.value)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

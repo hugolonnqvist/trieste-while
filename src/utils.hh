@@ -1,5 +1,6 @@
 #pragma once
 #include "lang.hh"
+#include "data_flow_analysis.hh"
 
 namespace whilelang {
     using namespace ::trieste;
@@ -15,4 +16,8 @@ namespace whilelang {
 	int calc_arithmetic_op(Token op, int x, int y);
 
     std::string get_identifier(const Node& node);
+
+    void log_cp_state_table(const Nodes instructions, NodeMap<State> state_table);
+
+	bool state_equals(State s1, State s2);
 }
