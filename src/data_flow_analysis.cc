@@ -1,14 +1,26 @@
 #include "data_flow_analysis.hh"
 
+#include "utils.hh"
+
 namespace whilelang {
     using namespace trieste;
 
-    DataFlowAnalaysis::DataFlowAnalaysis(Nodes instructions, Vars vars) {
+    DataFlowAnalysis::DataFlowAnalysis() {
         this->state_table = NodeMap<State>();
-        init_state_table(instructions, vars);
     }
 
-    void DataFlowAnalaysis::init_state_table(Nodes instructions, Vars vars) {
+    void DataFlowAnalysis::init(const Nodes instructions, const Vars vars) {
+        if (instructions.empty()) {
+            throw std::runtime_error("No instructions exist for this program");
+        }
+        init_state_table(instructions, vars);
+
+        // Initial state has all unknown, i.e. all Top
+        set_state(instructions[0], TTop, 0);
+    }
+
+    void DataFlowAnalysis::init_state_table(const Nodes instructions,
+                                            const Vars vars) {
         for (auto inst : instructions) {
             State state = State();
 
@@ -19,12 +31,24 @@ namespace whilelang {
         }
     }
 
-    void DataFlowAnalaysis::set_state_in_table(Node node, State state) {
+    void DataFlowAnalysis::set_state_in_table(Node node, State state) {
         state_table[node] = state;
     }
 
-    State DataFlowAnalaysis::join(const State s1, const State s2,
-                                  JoinFn join_fn) {
+    StateValue DataFlowAnalysis::get_state_value(Node inst, std::string var) {
+        return state_table[inst][var];
+    };
+
+    StateValue DataFlowAnalysis::get_state_value(Node inst, Node ident) {
+        if (ident != Ident) {
+            throw std::runtime_error(
+                "Error, can not get value of state from non ident node.");
+        }
+        auto var = get_identifier(ident);
+        return state_table[inst][var];
+    };
+    State DataFlowAnalysis::join(const State s1, const State s2,
+                                 JoinFn join_fn) {
         if (s1.size() != s2.size()) {
             throw std::runtime_error("State sizes do not match");
         }
@@ -45,7 +69,7 @@ namespace whilelang {
         return result_state;
     }
 
-    void DataFlowAnalaysis::set_state(Node inst, Token type, int value) {
+    void DataFlowAnalysis::set_state(const Node inst, Token type, int value) {
         State new_state = State();
 
         for (auto& [_, old_st] : state_table[inst]) {
@@ -53,7 +77,7 @@ namespace whilelang {
         }
     }
 
-    std::string DataFlowAnalaysis::z_analysis_tok_to_str(StateValue value) {
+    std::string DataFlowAnalysis::z_analysis_tok_to_str(StateValue value) {
         if (value.type == TTop) {
             return "?";
         } else if (value.type == TZero) {
@@ -65,7 +89,7 @@ namespace whilelang {
         }
     }
 
-    void DataFlowAnalaysis::log_state_table(Nodes instructions) {
+    void DataFlowAnalysis::log_state_table(Nodes instructions) {
         int width = 8;
         int number_of_vars = state_table[instructions[0]].size();
         std::stringstream str;

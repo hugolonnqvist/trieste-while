@@ -1,4 +1,5 @@
 #include "control_flow.hh"
+
 #include "utils.hh"
 
 namespace whilelang {
@@ -7,7 +8,7 @@ namespace whilelang {
     // Public
     ControlFlow::ControlFlow() {
         this->instructions = Nodes();
-		this->vars = Vars();
+        this->vars = Vars();
         this->predecessor = NodeMap<NodeSet>();
         this->successor = NodeMap<NodeSet>();
     }
@@ -42,7 +43,7 @@ namespace whilelang {
 
     void ControlFlow::log_predecessors_and_successors() {
         for (size_t i = 0; i < instructions.size(); i++) {
-			auto inst = instructions[i];
+            auto inst = instructions[i];
             logging::Debug() << "Instruction: " << i + 1 << "\n" << inst;
             logging::Debug() << "Predecessors: {" << std::endl;
 
@@ -51,7 +52,7 @@ namespace whilelang {
             if (pred == predecessor.end()) {
                 logging::Debug() << "No predecessors" << std::endl;
             } else {
-				for (auto p : pred->second) {
+                for (auto p : pred->second) {
                     logging::Debug() << p << " " << std::endl;
                 }
                 logging::Debug() << "}" << std::endl;
@@ -64,7 +65,7 @@ namespace whilelang {
             if (succ == successor.end()) {
                 logging::Debug() << "No successors" << std::endl;
             } else {
-				for (auto s : succ->second) {
+                for (auto s : succ->second) {
                     logging::Debug() << s << " " << std::endl;
                 }
                 logging::Debug() << "}" << std::endl;

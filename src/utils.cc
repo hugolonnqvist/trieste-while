@@ -121,4 +121,6 @@ namespace whilelang {
         }
         return true;
     }
+
+    Node create_const(int value) { return Int ^ std::to_string(value); };
 }

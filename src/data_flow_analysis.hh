@@ -13,13 +13,19 @@ namespace whilelang {
     using JoinFn = StateValue(StateValue st1, StateValue st2);
     using State = std::map<std::string, StateValue>;
 
-    class DataFlowAnalaysis {
+    class DataFlowAnalysis {
        public:
-        DataFlowAnalaysis(Nodes instructions, Vars vars);
+        DataFlowAnalysis();
+
+        void init(const Nodes instructions, const Vars vars);
 
         const NodeMap<State> get_state_table() { return state_table; };
 
-        State get_state_in_table(Node node) { return state_table[node]; };
+        State get_state_in_table(Node inst) { return state_table[inst]; };
+
+        StateValue get_state_value(Node inst, std::string var);
+
+        StateValue get_state_value(Node inst, Node ident);
 
         void set_state_in_table(Node node, State state);
 

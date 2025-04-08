@@ -78,17 +78,8 @@ namespace whilelang {
 											 << (AExpr << (_(Op)->type() << (Normalize << lhs) 
 																	     << (Normalize << rhs)));
 						
-						// if 
-						// logging::Debug() << _(AExpr);
-						try {
-							auto return_nodes = Seq << (Lift << Semi << (Stmt << assign))
-													<< (Atom << id->clone());
-							return return_nodes;
-						} catch (...) {
-							logging::Debug() << _(AExpr);
-						}
-						return {};
-						// throw std::runtime_error("WHat");
+						return Seq << (Lift << Semi << (Stmt << assign))
+								   << (Atom << id->clone());
                     },
 
                 T(Normalize) << (T(AExpr) << T(Int, Ident, Input)[Expr])>>

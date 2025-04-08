@@ -13,7 +13,8 @@ namespace whilelang {
         const NodeSet successors(Node node) { return successor[node]; };
 
         const Nodes get_instructions() { return instructions; };
-        const Vars get_vars() { return vars; };
+
+		const Vars get_vars() { return vars; };
 
         void add_instruction(Node inst) { instructions.push_back(inst); };
 

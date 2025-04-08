@@ -20,4 +20,6 @@ namespace whilelang {
     void log_cp_state_table(const Nodes instructions, NodeMap<State> state_table);
 
 	bool state_equals(State s1, State s2);
+
+    Node create_const(int value);
 }

@@ -6,6 +6,7 @@ namespace whilelang {
 
 	Reader reader();
 	Rewriter interpret();
+	Rewriter constant_analysis(bool &changed);
 
     // Program
     inline const auto Program =

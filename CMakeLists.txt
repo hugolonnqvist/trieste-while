@@ -17,6 +17,7 @@ src/while.cc
 src/parser.cc
 src/reader.cc
 src/interpreter.cc
+src/constant_analysis.cc
 
 src/utils.cc
 src/control_flow.cc
@@ -29,7 +30,7 @@ src/passes/eval.cc
 src/passes/normalization.cc
 src/passes/gather_control_flow.cc
 src/passes/zero_analysis.cc
-src/passes/constant_propagation.cc
+src/passes/constant_folding.cc
 )
 
 add_executable(while_trieste
@@ -44,11 +45,11 @@ src/data_flow_analysis.cc
 src/passes/expressions.cc
 src/passes/statements.cc
 src/passes/check_refs.cc
-src/passes/eval.cc
 src/passes/normalization.cc
-src/passes/gather_control_flow.cc
-src/passes/zero_analysis.cc
-src/passes/constant_propagation.cc
+# src/passes/eval.cc
+# src/passes/gather_control_flow.cc
+# src/passes/zero_analysis.cc
+# src/passes/constant_folding.cc
 )
 
 target_link_libraries(while

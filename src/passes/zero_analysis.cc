@@ -11,19 +11,20 @@ namespace whilelang {
             std::string ident = get_identifier(inst / Ident);
             Node rhs = (inst / Rhs) / Expr;
 
-			if (rhs == Atom) {
-				auto atom = rhs / Expr;
-				if (atom == Int) {
-					incoming_state[ident].type =
-						get_int_value(atom) == 0 ? TZero : TNonZero;
-				} else if (atom == Ident) {
-					std::string rhs_ident = get_identifier(atom);
-					incoming_state[ident] = incoming_state[rhs_ident];
-				} else {
-					// Either rhs is operation or input, regerdless top is reached
-					incoming_state[ident].type = TTop;
-				}
-			}
+            if (rhs == Atom) {
+                auto atom = rhs / Expr;
+                if (atom == Int) {
+                    incoming_state[ident].type =
+                        get_int_value(atom) == 0 ? TZero : TNonZero;
+                } else if (atom == Ident) {
+                    std::string rhs_ident = get_identifier(atom);
+                    incoming_state[ident] = incoming_state[rhs_ident];
+                } else {
+                    // Either rhs is operation or input, regerdless top is
+                    // reached
+                    incoming_state[ident].type = TTop;
+                }
+            }
         }
         return incoming_state;
     }
@@ -54,9 +55,10 @@ namespace whilelang {
         return top;
     }
 
-    // clang-format off
     PassDef z_analysis(std::shared_ptr<ControlFlow> control_flow) {
+        auto analysis = std::make_shared<DataFlowAnalysis>();
 
+        // clang-format off
         PassDef z_analysis =  {
             "z_analysis",
             normalization_wf,
@@ -104,17 +106,12 @@ namespace whilelang {
 		};
 
         // clang-format on
-        z_analysis.post([control_flow](Node) {
+        z_analysis.post([=](Node) {
             const Nodes instructions = control_flow->get_instructions();
             const Vars vars = control_flow->get_vars();
-
-            auto analysis =
-                std::make_shared<DataFlowAnalaysis>(instructions, vars);
-
-            // Initial state has all unknown, i.e. all Top
-            analysis->set_state(instructions[0], TTop, 0);
-
             std::deque<Node> worklist{instructions[0]};
+
+            analysis->init(instructions, vars);
 
             while (!worklist.empty()) {
                 Node inst = worklist.front();

@@ -11,12 +11,14 @@ namespace whilelang {
     PassDef expressions();
     PassDef statements();
     PassDef check_refs();
-	PassDef eval();
+    PassDef eval();
     PassDef normalization();
     PassDef gather_instructions(std::shared_ptr<ControlFlow> control_flow);
     PassDef gather_flow_graph(std::shared_ptr<ControlFlow> control_flow);
     PassDef z_analysis(std::shared_ptr<ControlFlow> control_flow);
-    PassDef constant_propagation(std::shared_ptr<ControlFlow> control_flow);
+
+    PassDef constant_folding(std::shared_ptr<ControlFlow> control_flow,
+                             bool& changed);
 
     // clang-format off
 	inline const auto parse_token =
@@ -116,6 +118,6 @@ namespace whilelang {
 		| (Mul <<= (Lhs >>= Atom) * (Rhs >>= Atom))
 		| (LT <<= (Lhs >>= Atom) * (Rhs >>= Atom))
 		| (Equals <<= (Lhs >>= Atom) * (Rhs >>= Atom))
-		| (Output <<= AExpr)
+		| (Output <<= Atom)
 		;
 }
