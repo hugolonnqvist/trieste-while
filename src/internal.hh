@@ -11,6 +11,7 @@ namespace whilelang {
     PassDef expressions();
     PassDef statements();
     PassDef check_refs();
+	PassDef eval();
     PassDef normalization();
     PassDef gather_instructions(std::shared_ptr<ControlFlow> control_flow);
     PassDef init_flow_graph(std::shared_ptr<ControlFlow> control_flow);

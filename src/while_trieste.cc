@@ -1,6 +1,6 @@
 #include <trieste/driver.h>
 
-#include "reader.cc"
+#include "lang.hh"
 
 int main(int argc, char** argv) {
     return trieste::Driver(whilelang::reader()).run(argc, argv);

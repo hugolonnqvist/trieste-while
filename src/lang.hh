@@ -4,7 +4,8 @@
 namespace whilelang {
     using namespace trieste;
 
-    Reader reader();
+	Reader reader();
+	Rewriter interpret();
 
     // Program
     inline const auto Program =
@@ -68,6 +69,8 @@ namespace whilelang {
     inline const auto Post = TokenDef("post");
     inline const auto Inst = TokenDef("inst");
 
+	// Evaluation
+	inline const auto Eval = TokenDef("eval");
 
 	// Normalization
     inline const auto Normalize = TokenDef("normalize");
@@ -84,4 +87,4 @@ namespace whilelang {
 
 	// Constant propagation analysis
     inline const auto TConstant = TokenDef("t_constant", flag::print);
-} 
+}
