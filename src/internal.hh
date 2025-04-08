@@ -14,7 +14,7 @@ namespace whilelang {
 	PassDef eval();
     PassDef normalization();
     PassDef gather_instructions(std::shared_ptr<ControlFlow> control_flow);
-    PassDef init_flow_graph(std::shared_ptr<ControlFlow> control_flow);
+    PassDef gather_flow_graph(std::shared_ptr<ControlFlow> control_flow);
     PassDef z_analysis(std::shared_ptr<ControlFlow> control_flow);
     PassDef constant_propagation(std::shared_ptr<ControlFlow> control_flow);
 

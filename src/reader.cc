@@ -23,7 +23,7 @@ namespace whilelang {
 
                 // Static analysis
                 gather_instructions(control_flow),
-                // init_flow_graph(control_flow),
+                // gather_flow_graph(control_flow),
 
                 // z_analysis(control_flow),
                 constant_propagation(control_flow),

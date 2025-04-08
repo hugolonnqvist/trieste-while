@@ -27,8 +27,7 @@ src/passes/statements.cc
 src/passes/check_refs.cc
 src/passes/eval.cc
 src/passes/normalization.cc
-src/passes/gather_instructions.cc
-src/passes/control_flow.cc
+src/passes/gather_control_flow.cc
 src/passes/zero_analysis.cc
 src/passes/constant_propagation.cc
 )
@@ -47,8 +46,7 @@ src/passes/statements.cc
 src/passes/check_refs.cc
 src/passes/eval.cc
 src/passes/normalization.cc
-src/passes/gather_instructions.cc
-src/passes/control_flow.cc
+src/passes/gather_control_flow.cc
 src/passes/zero_analysis.cc
 src/passes/constant_propagation.cc
 )
