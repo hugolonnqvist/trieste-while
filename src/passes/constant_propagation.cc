@@ -26,8 +26,8 @@ namespace whilelang {
     State cp_flow_fn(Node inst, State incoming_state) {
         if (inst == Assign) {
             std::string ident = get_identifier(inst / Ident);
-
-            if ((inst / Rhs) == Atom) {
+	
+            if (((inst / Rhs) / Expr) == Atom) {
                 incoming_state[ident] =
                     atom_flow_helper(inst / Rhs, incoming_state);
             } else {
@@ -159,7 +159,7 @@ namespace whilelang {
             }
 
             control_flow->log_instructions();
-			// control_flow->log_predecessors_and_successors();
+            // control_flow->log_predecessors_and_successors();
             log_cp_state_table(instructions, cp_analysis->get_state_table());
 
             return 0;

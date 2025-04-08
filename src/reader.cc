@@ -25,8 +25,8 @@ namespace whilelang {
                 gather_instructions(control_flow),
                 // gather_flow_graph(control_flow),
 
-                // z_analysis(control_flow),
-                constant_propagation(control_flow),
+                z_analysis(control_flow),
+                // constant_propagation(control_flow),
 
             },
             whilelang::parser(),

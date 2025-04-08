@@ -96,7 +96,7 @@ namespace whilelang {
 		| (Stmt <<= (Stmt >>= (Skip | Assign | While | If | Output | Semi)))
 		| (If <<= BExpr * (Then >>= Stmt) * (Else >>= Stmt))
 		| (While <<= BExpr * (Do >>= Stmt))
-		| (Assign <<= Ident * AExpr)[Ident]
+		| (Assign <<= Ident * (Rhs >>= AExpr))[Ident]
 		| (Output <<= AExpr)
 		| (Brace <<= expressions_grouping_construct)
 		| (Semi <<= Stmt++[1])
@@ -109,14 +109,13 @@ namespace whilelang {
 		statements_wf
 		| (Program <<= Instructions)
 		| (Instructions <<= Stmt)
-		| (AExpr  <<= (Expr >>= (Mul | Add | Sub)))
+		| (AExpr <<= (Expr >>= (Atom | Add | Sub | Mul)))
+		| (Atom <<= (Expr >>= (Int | Ident | Input)))
 		| (Add <<= (Lhs >>= Atom) * (Rhs >>= Atom))
 		| (Sub <<= (Lhs >>= Atom) * (Rhs >>= Atom))
 		| (Mul <<= (Lhs >>= Atom) * (Rhs >>= Atom))
-		| (LT <<= (Lhs >>= (AExpr | Atom)) * (Rhs >>= (AExpr | Atom)))
-		| (Equals <<= (Lhs >>= (AExpr | Atom)) * (Rhs >>= (AExpr | Atom)))
-		| (Assign <<= Ident * (Rhs >>= (AExpr | Atom)))[Ident]
-		| (Output <<= (Atom | AExpr))
-		| (Atom <<= (Expr >>= (Int | Ident | Input)))
+		| (LT <<= (Lhs >>= Atom) * (Rhs >>= Atom))
+		| (Equals <<= (Lhs >>= Atom) * (Rhs >>= Atom))
+		| (Output <<= AExpr)
 		;
 }

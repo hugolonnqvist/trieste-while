@@ -64,7 +64,7 @@ namespace whilelang {
                     [](Match &_) -> Node
                     {
 						return Assign << _(Ident)
-									  << (Normalize << _(AExpr));
+									  << (AExpr << (Normalize << _(AExpr)));
                     },
 				
                 T(Normalize) << (T(AExpr)[AExpr] << T(Add, Sub, Mul)[Op]) >>
