@@ -100,7 +100,7 @@ namespace whilelang {
             const auto instructions = control_flow->get_instructions();
             const Vars vars = control_flow->get_vars();
 
-			set_lattice->init(instructions);
+            set_lattice->init(instructions);
 
             std::deque<Node> worklist{instructions.back()};
 

@@ -8,21 +8,20 @@ namespace whilelang {
 
     State z_flow(Node inst, State incoming_state) {
         if (inst == Assign) {
-            std::string ident = get_identifier(inst / Ident);
+            std::string var = get_identifier(inst / Ident);
             Node rhs = (inst / Rhs) / Expr;
 
             if (rhs == Atom) {
                 auto atom = rhs / Expr;
                 if (atom == Int) {
-                    incoming_state[ident].type =
+                    incoming_state[var].type =
                         get_int_value(atom) == 0 ? TZero : TNonZero;
                 } else if (atom == Ident) {
-                    std::string rhs_ident = get_identifier(atom);
-                    incoming_state[ident] = incoming_state[rhs_ident];
+                    std::string rhs_var = get_identifier(atom);
+                    incoming_state[var] = incoming_state[rhs_var];
                 } else {
-                    // Either rhs is operation or input, regerdless top is
-                    // reached
-                    incoming_state[ident].type = TTop;
+                    // Rhs must be input, by wf
+                    incoming_state[var].type = TTop;
                 }
             }
         }

@@ -9,7 +9,7 @@ namespace whilelang {
             Node expr = inst / Expr;
 
             if (expr == Int) {
-                return {TConstant, get_int_value(expr)};
+                return StateValue{TConstant, get_int_value(expr)};
             } else if (expr == Ident) {
                 std::string rhs_ident = get_identifier(expr);
                 return incoming_state[rhs_ident];
@@ -19,31 +19,37 @@ namespace whilelang {
         return {TTop, 0};
     }
 
-    State cp_flow_fn(Node inst, State incoming_state) {
+    auto apply_op = [](Node op, int x, int y) {
+        if (op == Add) {
+            return x + y;
+        } else if (op == Sub) {
+            return x - y;
+        } else if (op == Mul) {
+            return x * y;
+        } else {
+            throw std::runtime_error(
+                "Error, expected an arithmetic operation, but was" +
+                std::string(op->type().str()));
+        }
+    };
+
+    State cp_flow(Node inst, State incoming_state) {
         if (inst == Assign) {
             std::string ident = get_identifier(inst / Ident);
 
-            auto rhs_expr = (inst / Rhs) / Expr;
-            if (rhs_expr == Atom) {
-                incoming_state[ident] = atom_flow(rhs_expr, incoming_state);
+            auto expr = (inst / Rhs) / Expr;
+            if (expr == Atom) {
+                incoming_state[ident] = atom_flow(expr, incoming_state);
             } else {
-                Node lhs = rhs_expr / Lhs;
-                Node rhs = rhs_expr / Rhs;
+                Node lhs = expr / Lhs;
+                Node rhs = expr / Rhs;
 
                 StateValue lhs_st = atom_flow(lhs, incoming_state);
                 StateValue rhs_st = atom_flow(rhs, incoming_state);
 
                 if (lhs_st.type == TConstant && rhs_st.type == TConstant) {
-                    int calculated_value;
-                    if (rhs_expr == Add) {
-                        calculated_value = lhs_st.value + rhs_st.value;
-                    } else if (rhs_expr == Sub) {
-                        calculated_value = lhs_st.value - rhs_st.value;
-                    } else {
-                        calculated_value = lhs_st.value * rhs_st.value;
-                    }
-
-                    incoming_state[ident] = {TConstant, calculated_value};
+                    incoming_state[ident] = StateValue{
+                        TConstant, apply_op(expr, lhs_st.value, rhs_st.value)};
                 } else {
                     incoming_state[ident] = {TTop, 0};
                 }
@@ -52,7 +58,7 @@ namespace whilelang {
         return incoming_state;
     }
 
-    StateValue cp_join_fn(StateValue st1, StateValue st2) {
+    StateValue cp_join(StateValue st1, StateValue st2) {
         StateValue top_elem = {TTop, 0};
         if (st1.type == TBottom) {
             return st2;
@@ -145,8 +151,8 @@ namespace whilelang {
 
         // clang-format on
         constant_folding.pre([=](Node) {
-            cp_analysis->forward_worklist_algoritm(control_flow, cp_flow_fn,
-                                                   cp_join_fn);
+            cp_analysis->forward_worklist_algoritm(control_flow, cp_flow,
+                                                   cp_join);
 
             control_flow->log_instructions();
             log_cp_state_table(control_flow->get_instructions(),
