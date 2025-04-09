@@ -17,9 +17,9 @@ namespace whilelang {
     PassDef gather_flow_graph(std::shared_ptr<ControlFlow> control_flow);
     PassDef z_analysis(std::shared_ptr<ControlFlow> control_flow);
 
-    PassDef constant_folding(std::shared_ptr<ControlFlow> control_flow,
-                             bool& changed);
+    PassDef constant_folding(std::shared_ptr<ControlFlow> control_flow);
 
+    PassDef dead_code_elimination(std::shared_ptr<ControlFlow> control_flow);
     // clang-format off
 	inline const auto parse_token =
 		Skip |

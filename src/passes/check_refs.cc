@@ -21,6 +21,7 @@ namespace whilelang {
                         }
                         return NoChange;
                     },
-           }};
+			}
+		};
     }
 }

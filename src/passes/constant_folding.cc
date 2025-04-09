@@ -75,13 +75,11 @@ namespace whilelang {
         return top_elem;
     }
 
-    PassDef constant_folding(std::shared_ptr<ControlFlow> control_flow,
-                             bool& changed) {
+    PassDef constant_folding(std::shared_ptr<ControlFlow> control_flow) {
         auto cp_analysis = std::make_shared<DataFlowAnalysis>();
 
-        auto ident_to_const = [cp_analysis, &changed](int value) -> Node {
+        auto ident_to_const = [cp_analysis](int value) -> Node {
             auto constant = create_const(value);
-            changed = true;
 
             return Atom << constant;
         };
@@ -144,36 +142,12 @@ namespace whilelang {
 
         // clang-format on
         constant_folding.pre([=](Node) {
-            const auto instructions = control_flow->get_instructions();
-            const Vars vars = control_flow->get_vars();
-            cp_analysis->init(instructions, vars);
-
-            std::deque<Node> worklist{instructions[0]};
-
-            while (!worklist.empty()) {
-                Node inst = worklist.front();
-                worklist.pop_front();
-
-                State in_state = cp_analysis->get_state_in_table(inst);
-                State out_state = cp_flow_fn(inst, in_state);
-
-                cp_analysis->set_state_in_table(inst, out_state);
-
-                for (Node succ : control_flow->successors(inst)) {
-                    State succ_state = cp_analysis->get_state_in_table(succ);
-                    State new_succ_state =
-                        cp_analysis->join(out_state, succ_state, cp_join_fn);
-
-                    if (!state_equals(new_succ_state, succ_state)) {
-                        cp_analysis->set_state_in_table(succ, new_succ_state);
-                        worklist.push_back(succ);
-                    }
-                }
-            }
+            cp_analysis->forward_worklist_algoritm(control_flow, cp_flow_fn,
+                                                   cp_join_fn);
 
             control_flow->log_instructions();
-            log_cp_state_table(instructions, cp_analysis->get_state_table());
-
+            log_cp_state_table(control_flow->get_instructions(),
+                               cp_analysis->get_state_table());
             return 0;
         });
 

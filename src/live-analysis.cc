@@ -3,20 +3,19 @@
 namespace whilelang {
     using namespace trieste;
 
-    Rewriter constant_analysis() {
+    Rewriter live_analysis(bool& changed) {
         auto control_flow = std::make_shared<ControlFlow>();
 
-		Rewriter rewriter = {
-            "constant_analysis",
+        Rewriter rewriter = {
+            "live_analysis",
             {
                 gather_instructions(control_flow),
                 gather_flow_graph(control_flow),
-                constant_folding(control_flow),
-                // z_analysis(control_flow),
+                dead_code_elimination(control_flow),
             },
             whilelang::normalization_wf,
         };
 
-		return rewriter;
+        return rewriter;
     }
 }

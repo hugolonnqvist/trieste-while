@@ -28,8 +28,7 @@ int main(int argc, char const* argv[]) {
     try {
         auto result = reader.read();
 
-		bool tmp = false;
-		if (constant_analysis) result = result >> whilelang::constant_analysis(tmp);
+		if (constant_analysis) result = result >> whilelang::constant_analysis();
 
         if (run) result = result >> whilelang::interpret();
 

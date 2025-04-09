@@ -10,8 +10,9 @@ namespace whilelang {
         int value;
     };
 
-    using JoinFn = StateValue(StateValue st1, StateValue st2);
     using State = std::map<std::string, StateValue>;
+    using JoinFn = StateValue(StateValue, StateValue);
+    using FlowFn = State(Node, State);
 
     class DataFlowAnalysis {
        public:
@@ -34,6 +35,10 @@ namespace whilelang {
         void set_state(Node inst, Token type, int value);
 
         void log_state_table(Nodes instructions);
+
+        void forward_worklist_algoritm(
+            std::shared_ptr<ControlFlow> control_flow, FlowFn flow_fn,
+            JoinFn join_fn);
 
        private:
         NodeMap<State> state_table;
