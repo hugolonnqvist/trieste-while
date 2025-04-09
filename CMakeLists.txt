@@ -21,7 +21,6 @@ src/optimization_analysis.cc
 
 src/utils.cc
 src/control_flow.cc
-src/data_flow_analysis.cc
 
 src/passes/expressions.cc
 src/passes/statements.cc
@@ -41,7 +40,6 @@ src/reader.cc
 
 src/utils.cc
 src/control_flow.cc
-src/data_flow_analysis.cc
 
 src/passes/expressions.cc
 src/passes/statements.cc

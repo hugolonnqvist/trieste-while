@@ -77,15 +77,4 @@ namespace whilelang {
     inline const auto Normalize = TokenDef("normalize");
     inline const auto Atom = TokenDef("atom");
     inline const auto Instructions = TokenDef("instructions", flag::symtab);
-
-    // Static analysis
-    inline const auto TTop = TokenDef("t_top");
-    inline const auto TBottom = TokenDef("t_bottom");
-
-    // Zero analysis
-    inline const auto TZero = TokenDef("t_zero");
-    inline const auto TNonZero = TokenDef("t_non_zero");
-
-	// Constant propagation analysis
-    inline const auto TConstant = TokenDef("t_constant", flag::print);
 }

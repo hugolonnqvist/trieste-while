@@ -1,5 +1,4 @@
 #pragma once
-#include "data_flow_analysis.hh"
 #include "lang.hh"
 
 namespace whilelang {
@@ -17,13 +16,5 @@ namespace whilelang {
 
     std::string get_identifier(const Node& node);
 
-    void log_cp_state_table(const Nodes instructions,
-                            NodeMap<State> state_table);
-
-    void log_z_state_table(const Nodes instructions,
-                           NodeMap<State> state_table);
-
-    bool state_equals(State s1, State s2);
-
-    Node create_const(int value);
+    Node create_const_node(int value);
 }

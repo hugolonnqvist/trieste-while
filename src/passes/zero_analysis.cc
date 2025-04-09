@@ -6,7 +6,45 @@
 namespace whilelang {
     using namespace trieste;
 
-    State z_flow(Node inst, State incoming_state) {
+    enum class ZeroAbstractType { Bottom, Zero, NonZero, Top };
+
+    struct ZeroLatticeValue {
+        ZeroAbstractType type;
+
+        bool operator==(const ZeroLatticeValue& other) const {
+            return type == other.type;
+        }
+
+        friend std::ostream& operator<<(std::ostream& os,
+                                        const ZeroLatticeValue& value) {
+            switch (value.type) {
+                case ZeroAbstractType::Top:
+                    os << "?";
+                    break;
+                case ZeroAbstractType::Zero:
+                    os << "0";
+                    break;
+                case ZeroAbstractType::NonZero:
+                    os << "N";
+                    break;
+                case ZeroAbstractType::Bottom:
+                    os << "⊥";
+                    break;
+            }
+            return os;
+        }
+
+        static ZeroLatticeValue top() { return {ZeroAbstractType::Top}; }
+        static ZeroLatticeValue zero() { return {ZeroAbstractType::Zero}; }
+        static ZeroLatticeValue non_zero() {
+            return {ZeroAbstractType::NonZero};
+        }
+        static ZeroLatticeValue bottom() { return {ZeroAbstractType::Bottom}; }
+    };
+
+    using State = typename DataFlowAnalysis<ZeroLatticeValue>::State;
+
+    State zero_flow(Node inst, State incoming_state) {
         if (inst == Assign) {
             std::string var = get_identifier(inst / Ident);
             Node rhs = (inst / Rhs) / Expr;
@@ -14,103 +52,65 @@ namespace whilelang {
             if (rhs == Atom) {
                 auto atom = rhs / Expr;
                 if (atom == Int) {
-                    incoming_state[var].type =
-                        get_int_value(atom) == 0 ? TZero : TNonZero;
+                    incoming_state[var].type = get_int_value(atom) == 0
+                                                   ? ZeroAbstractType::Zero
+                                                   : ZeroAbstractType::NonZero;
                 } else if (atom == Ident) {
                     std::string rhs_var = get_identifier(atom);
                     incoming_state[var] = incoming_state[rhs_var];
                 } else {
-                    // Rhs must be input, by wf
-                    incoming_state[var].type = TTop;
+                    incoming_state[var].type = ZeroAbstractType::Top;
                 }
             }
         }
         return incoming_state;
     }
 
-    StateValue z_join(StateValue st1, StateValue st2) {
-        StateValue top = {TTop, 0};
-        StateValue zero = {TZero, 0};
-        StateValue nzero = {TNonZero, 0};
+    ZeroLatticeValue zero_join(ZeroLatticeValue x, ZeroLatticeValue y) {
+        auto top = ZeroLatticeValue::top();
+        auto zero = ZeroLatticeValue::zero();
+        auto non_zero = ZeroLatticeValue::non_zero();
+        auto bottom = ZeroLatticeValue::bottom();
 
-        if (st1.type == TBottom) {
-            return st2;
+        if (x == bottom) {
+            return y;
         }
-        if (st2.type == TBottom) {
-            return st1;
+        if (y == bottom) {
+            return x;
         }
 
-        if (st1.type == TTop || st2.type == TTop) {
+        if (x == top || y == top) {
             return top;
         }
 
-        if (st1.type == TZero && st2.type == TZero) {
+        if (x == zero && y == zero) {
             return zero;
         }
-        if (st1.type == TNonZero && st2.type == TNonZero) {
-            return nzero;
+        if (x == non_zero && y == non_zero) {
+            return non_zero;
         }
 
         return top;
     }
 
     PassDef z_analysis(std::shared_ptr<ControlFlow> control_flow) {
-        auto analysis = std::make_shared<DataFlowAnalysis>();
+        auto analysis = std::make_shared<DataFlowAnalysis<ZeroLatticeValue>>(
+            zero_join, zero_flow);
 
-        // clang-format off
-        PassDef z_analysis =  {
-            "z_analysis",
-            normalization_wf,
-            dir::topdown | dir::once,
-            {
-                // Control flow inside of While
-                T(While)[While] >> [control_flow](Match &_) -> Node
-                    {
-                        auto b_expr = _(While) / BExpr;
-                        auto body = _(While) / Do;
+        PassDef z_analysis = {
+            "z_analysis", normalization_wf, dir::topdown | dir::once, {}};
 
-						control_flow->add_successor(b_expr, get_first_basic_child(body));
-						control_flow->add_successor(get_last_basic_children(body), b_expr);
-
-                        return NoChange;
-                    },
-
-                // Control flow inside of If
-                T(If)[If] >> 
-                    [control_flow](Match &_) -> Node
-                    {
-                        auto b_expr = _(If) / BExpr;
-                        auto then_stmt = _(If) / Then;
-                        auto else_stmt = _(If) / Else;
-
-						control_flow->add_successor(b_expr, get_first_basic_child(then_stmt));
-						control_flow->add_successor(b_expr, get_first_basic_child(else_stmt));
-				
-                        return NoChange;
-                    },
-
-                // General case of a sequence of statements
-                In(Semi) * T(Stmt)[Prev] * T(Stmt)[Post] >>
-                    [control_flow](Match &_) -> Node
-                    {
-
-						auto prev = _(Prev);
-						auto post = _(Post);
-
-						control_flow->add_successor(get_last_basic_children(prev), get_first_basic_child(post));
-
-                        return NoChange;
-                    },
-			}
-		};
-
-        // clang-format on
         z_analysis.post([=](Node) {
-            analysis->forward_worklist_algoritm(control_flow, z_flow, z_join);
-            control_flow->log_instructions();
-            log_z_state_table(control_flow->get_instructions(),
-                              analysis->get_state_table());
+            auto first_state = ZeroLatticeValue::top();
+            auto bottom = ZeroLatticeValue::bottom();
 
+            analysis->forward_worklist_algoritm(control_flow, first_state,
+                                                bottom);
+            control_flow->log_instructions();
+            analysis->log_state_table(control_flow->get_instructions());
+
+            // Clear
+            *control_flow = ControlFlow();
             return 0;
         });
 

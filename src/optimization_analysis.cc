@@ -11,12 +11,15 @@ namespace whilelang {
             {
                 gather_instructions(control_flow),
                 gather_flow_graph(control_flow),
+                z_analysis(control_flow),
+
+                gather_instructions(control_flow),
+                gather_flow_graph(control_flow),
                 constant_folding(control_flow),
 
                 gather_instructions(control_flow),
                 gather_flow_graph(control_flow),
                 dead_code_elimination(control_flow),
-                // z_analysis(control_flow),
             },
             whilelang::normalization_wf,
         };

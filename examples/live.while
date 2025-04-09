@@ -2,5 +2,6 @@ x := 1;
 y := x + input;
 z := input;
 
+output x;
 output y;
 output z;

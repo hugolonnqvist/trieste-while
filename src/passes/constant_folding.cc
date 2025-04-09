@@ -4,19 +4,72 @@
 namespace whilelang {
     using namespace trieste;
 
-    StateValue atom_flow(Node inst, State incoming_state) {
+    enum class CPAbstractType { Bottom, Constant, Top };
+
+    struct CPLatticeValue {
+        CPAbstractType type;
+        std::optional<int> value;
+
+        bool operator==(const CPLatticeValue& other) const {
+            if (type == other.type) {
+                if (type == CPAbstractType::Constant) {
+                    return value == other.value;
+                } else {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        friend std::ostream& operator<<(std::ostream& os,
+                                        const CPLatticeValue& lattice_value) {
+            switch (lattice_value.type) {
+                case CPAbstractType::Top:
+                    os << "?";
+                    break;
+                case CPAbstractType::Constant:
+                    if (auto str = lattice_value.value) {
+                        os << *str;
+                    } else {
+                        throw std::runtime_error(
+                            "Error, CPLatticeValue can not be of type Constant "
+                            "and not have integer value");
+                    }
+                    break;
+                case CPAbstractType::Bottom:
+                    os << "⊥";
+                    break;
+            }
+            return os;
+        }
+
+        static CPLatticeValue top() {
+            return {CPAbstractType::Top, std::nullopt};
+        }
+        static CPLatticeValue bottom() {
+            return {CPAbstractType::Bottom, std::nullopt};
+        }
+        static CPLatticeValue constant(int v) {
+            return {CPAbstractType::Constant, v};
+        }
+    };
+
+    using State = typename DataFlowAnalysis<CPLatticeValue>::State;
+
+    CPLatticeValue atom_flow(Node inst, State incoming_state) {
         if (inst == Atom) {
             Node expr = inst / Expr;
 
             if (expr == Int) {
-                return StateValue{TConstant, get_int_value(expr)};
+                return CPLatticeValue::constant(get_int_value(expr));
             } else if (expr == Ident) {
                 std::string rhs_ident = get_identifier(expr);
                 return incoming_state[rhs_ident];
             }
         }
 
-        return {TTop, 0};
+        return CPLatticeValue::top();
+        ;
     }
 
     auto apply_op = [](Node op, int x, int y) {
@@ -44,59 +97,63 @@ namespace whilelang {
                 Node lhs = expr / Lhs;
                 Node rhs = expr / Rhs;
 
-                StateValue lhs_st = atom_flow(lhs, incoming_state);
-                StateValue rhs_st = atom_flow(rhs, incoming_state);
+                CPLatticeValue lhs_value = atom_flow(lhs, incoming_state);
+                CPLatticeValue rhs_value = atom_flow(rhs, incoming_state);
 
-                if (lhs_st.type == TConstant && rhs_st.type == TConstant) {
-                    incoming_state[ident] = StateValue{
-                        TConstant, apply_op(expr, lhs_st.value, rhs_st.value)};
+                if (lhs_value.type == CPAbstractType::Constant &&
+                    rhs_value.type == CPAbstractType::Constant) {
+                    auto op_result =
+                        apply_op(expr, *lhs_value.value, *rhs_value.value);
+                    incoming_state[ident] = CPLatticeValue::constant(op_result);
                 } else {
-                    incoming_state[ident] = {TTop, 0};
+                    incoming_state[ident] = CPLatticeValue::top();
                 }
             }
         }
         return incoming_state;
     }
 
-    StateValue cp_join(StateValue st1, StateValue st2) {
-        StateValue top_elem = {TTop, 0};
-        if (st1.type == TBottom) {
-            return st2;
-        } else if (st2.type == TBottom) {
-            return st1;
+    CPLatticeValue cp_join(CPLatticeValue x, CPLatticeValue y) {
+        CPAbstractType top = CPAbstractType::Top;
+        CPAbstractType constant = CPAbstractType::Constant;
+        CPAbstractType bottom = CPAbstractType::Bottom;
+
+        if (x.type == bottom) {
+            return y;
+        } else if (y.type == bottom) {
+            return x;
         }
 
-        if (st1.type == TTop || st2.type == TTop) {
-            return top_elem;
+        if (x.type == top || y.type == top) {
+            return CPLatticeValue::top();
         }
 
-        if (st1.type == TConstant && st2.type == TConstant) {
-            if (st1.value == st2.value) {
-                return st1;
+        if (x.type == constant && y.type == constant) {
+            if (x.value == y.value) {
+                return x;
             } else {
-                return top_elem;
+                return CPLatticeValue::top();
             }
         }
 
-        return top_elem;
+        return CPLatticeValue::top();
     }
 
     PassDef constant_folding(std::shared_ptr<ControlFlow> control_flow) {
-        auto cp_analysis = std::make_shared<DataFlowAnalysis>();
+        auto analysis = std::make_shared<DataFlowAnalysis<CPLatticeValue>>(
+            cp_join, cp_flow);
 
-        auto ident_to_const = [cp_analysis](int value) -> Node {
-            auto constant = create_const(value);
-
-            return Atom << constant;
+        auto ident_to_const = [=](int value) -> Node {
+            return Atom << create_const_node(value);
         };
 
         auto try_atom_to_const = [=](Node inst, Node atom) -> Node {
             if ((atom / Expr) == Ident) {
-                auto state_value =
-                    cp_analysis->get_state_value(inst, atom / Expr);
+                auto lattice_value = analysis->get_lattice_value(
+                    inst, get_identifier(atom / Expr));
 
-                if (state_value.type == TConstant) {
-                    return ident_to_const(state_value.value);
+                if (lattice_value.type == CPAbstractType::Constant) {
+                    return ident_to_const(*lattice_value.value);
                 }
             }
             return atom;
@@ -114,12 +171,11 @@ namespace whilelang {
 						auto inst = _(Assign);
 						auto ident = _(Ident);
 						
-						auto state_value = cp_analysis->get_state_value(inst, ident);	
+						auto lattice_value = analysis->get_lattice_value(inst, get_identifier(ident));	
 						
-						if (state_value.type == TConstant) {
-							auto constant = ident_to_const(state_value.value);
+						if (lattice_value.type == CPAbstractType::Constant) {
 							return Assign << ident
-										  << (AExpr << constant);
+										  << (AExpr << ident_to_const(*lattice_value.value));
 						} else {
 							auto op = _(Op);
 							return Assign << ident
@@ -151,16 +207,20 @@ namespace whilelang {
 
         // clang-format on
         constant_folding.pre([=](Node) {
-            cp_analysis->forward_worklist_algoritm(control_flow, cp_flow,
-                                                   cp_join);
+            auto first_state = CPLatticeValue::top();
+            auto bottom = CPLatticeValue::bottom();
+
+            analysis->forward_worklist_algoritm(control_flow, first_state,
+                                                bottom);
 
             control_flow->log_instructions();
-            log_cp_state_table(control_flow->get_instructions(),
-                               cp_analysis->get_state_table());
+            analysis->log_state_table(control_flow->get_instructions());
+
             return 0;
         });
 
         constant_folding.post([=](Node) {
+            // Clear
             *control_flow = ControlFlow();
             return 0;
         });
