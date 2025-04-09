@@ -1,0 +1,6 @@
+x := 1;
+y := x + input;
+z := input;
+
+output y;
+output z;

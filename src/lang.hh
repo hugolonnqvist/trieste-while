@@ -6,7 +6,7 @@ namespace whilelang {
 
 	Reader reader();
 	Rewriter interpret();
-	Rewriter constant_analysis();
+	Rewriter optimization_analysis();
 
     // Program
     inline const auto Program =

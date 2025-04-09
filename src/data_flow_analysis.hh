@@ -34,9 +34,11 @@ namespace whilelang {
 
         void set_state(Node inst, Token type, int value);
 
-        void log_state_table(Nodes instructions);
-
         void forward_worklist_algoritm(
+            std::shared_ptr<ControlFlow> control_flow, FlowFn flow_fn,
+            JoinFn join_fn);
+
+        void backward_worklist_algoritm(
             std::shared_ptr<ControlFlow> control_flow, FlowFn flow_fn,
             JoinFn join_fn);
 
@@ -44,7 +46,5 @@ namespace whilelang {
         NodeMap<State> state_table;
 
         void init_state_table(Nodes instructions, Vars vars);
-
-        std::string z_analysis_tok_to_str(StateValue value);
     };
 }

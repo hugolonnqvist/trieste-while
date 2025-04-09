@@ -10,7 +10,16 @@ namespace whilelang {
        public:
         ControlFlow();
 
+		void clear() {
+			instructions.clear();
+			vars.clear();
+			predecessor.clear();
+			successor.clear();
+		}	
+
         const NodeSet successors(Node node) { return successor[node]; };
+
+        const NodeSet predecessors(Node node) { return predecessor[node]; };
 
         const Nodes get_instructions() { return instructions; };
 

@@ -18,8 +18,8 @@ namespace whilelang {
     PassDef z_analysis(std::shared_ptr<ControlFlow> control_flow);
 
     PassDef constant_folding(std::shared_ptr<ControlFlow> control_flow);
-
     PassDef dead_code_elimination(std::shared_ptr<ControlFlow> control_flow);
+
     // clang-format off
 	inline const auto parse_token =
 		Skip |
@@ -69,7 +69,7 @@ namespace whilelang {
 		parse_wf
 		| (File   <<= ~expressions_grouping_construct)
 		| (AExpr  <<= (Expr >>= (Int | Ident | Mul | Add | Sub | Input)))
-		| (BExpr  <<= (True | False | Not | Equals | LT | And | Or))
+		| (BExpr  <<= (Expr >>= (True | False | Not | Equals | LT | And | Or)))
 		| (Add    <<= AExpr++[2])
 		| (Sub    <<= AExpr++[2])
 		| (Mul    <<= AExpr++[2])
@@ -119,5 +119,10 @@ namespace whilelang {
 		| (LT <<= (Lhs >>= Atom) * (Rhs >>= Atom))
 		| (Equals <<= (Lhs >>= Atom) * (Rhs >>= Atom))
 		| (Output <<= Atom)
+		;
+
+	inline const wf::Wellformed dead_code_elim_wf = 
+		normalization_wf
+		| (Semi <<= Stmt++)
 		;
 }

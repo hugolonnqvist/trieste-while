@@ -107,36 +107,10 @@ namespace whilelang {
 
         // clang-format on
         z_analysis.post([=](Node) {
-            // const Nodes instructions = control_flow->get_instructions();
-            // const Vars vars = control_flow->get_vars();
-            // std::deque<Node> worklist{instructions[0]};
-            //
-            // analysis->init(instructions, vars);
-            //
-            // while (!worklist.empty()) {
-            //     Node inst = worklist.front();
-            //     worklist.pop_front();
-            //
-            //     State in_state = analysis->get_state_in_table(inst);
-            //     State out_state = z_flow(inst, in_state);
-            //
-            //     analysis->set_state_in_table(inst, out_state);
-            //
-            //     for (Node succ : control_flow->successors(inst)) {
-            //         State succ_state = analysis->get_state_in_table(succ);
-            //         State new_succ_state =
-            //             analysis->join(out_state, succ_state, z_join);
-            //
-            //         if (!state_equals(new_succ_state, succ_state)) {
-            //             analysis->set_state_in_table(succ, new_succ_state);
-            //             worklist.push_back(succ);
-            //         }
-            //     }
-            // }
-            //
             analysis->forward_worklist_algoritm(control_flow, z_flow, z_join);
-			control_flow->log_instructions();
-			analysis->log_state_table(control_flow->get_instructions());
+            control_flow->log_instructions();
+            log_z_state_table(control_flow->get_instructions(),
+                              analysis->get_state_table());
 
             return 0;
         });

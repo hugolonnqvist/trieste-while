@@ -84,8 +84,7 @@ namespace whilelang {
             return Atom << constant;
         };
 
-        auto try_atom_to_const = [cp_analysis, ident_to_const](
-                                     Node inst, Node atom) -> Node {
+        auto try_atom_to_const = [=](Node inst, Node atom) -> Node {
             if ((atom / Expr) == Ident) {
                 auto state_value =
                     cp_analysis->get_state_value(inst, atom / Expr);
@@ -103,25 +102,29 @@ namespace whilelang {
             normalization_wf,
             dir::bottomup | dir::once,
             {
-				T(Assign)[Assign] << (T(Ident)[Ident] * (T(AExpr) << T(Add, Sub, Mul))) >>
-					[cp_analysis, ident_to_const](Match &_) -> Node 
+				T(Assign)[Assign] << (T(Ident)[Ident] * (T(AExpr) << T(Add, Sub, Mul)[Op])) >>
+					[=](Match &_) -> Node 
 					{
 						auto inst = _(Assign);
 						auto ident = _(Ident);
 						
-						auto state_value = cp_analysis->get_state_value(inst, ident);
+						auto state_value = cp_analysis->get_state_value(inst, ident);	
 						
 						if (state_value.type == TConstant) {
 							auto constant = ident_to_const(state_value.value);
 							return Assign << ident
 										  << (AExpr << constant);
+						} else {
+							auto op = _(Op);
+							return Assign << ident
+										  << (AExpr << (op->type() << try_atom_to_const(inst, op / Lhs) 
+																   << try_atom_to_const(inst, op / Rhs)));
 						}
-
-						return NoChange;
 					},
 
+
 				T(Output)[Output] << (T(Atom)[Atom] << T(Ident)) >>
-					[cp_analysis, try_atom_to_const](Match &_) -> Node 
+					[=](Match &_) -> Node 
 					{
 						auto inst = _(Output);
 
@@ -129,7 +132,7 @@ namespace whilelang {
 					},
 
 				T(BExpr)[BExpr] << (T(LT, Equals)[Op] << (T(Atom)[Lhs] * T(Atom)[Rhs]))>>
-					[cp_analysis, try_atom_to_const](Match &_) -> Node 
+					[=](Match &_) -> Node 
 					{
 						auto inst = _(BExpr);
 
@@ -148,6 +151,11 @@ namespace whilelang {
             control_flow->log_instructions();
             log_cp_state_table(control_flow->get_instructions(),
                                cp_analysis->get_state_table());
+            return 0;
+        });
+
+        constant_folding.post([=](Node) {
+            *control_flow = ControlFlow();
             return 0;
         });
 

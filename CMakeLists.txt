@@ -17,7 +17,7 @@ src/while.cc
 src/parser.cc
 src/reader.cc
 src/interpreter.cc
-src/constant_analysis.cc
+src/optimization_analysis.cc
 
 src/utils.cc
 src/control_flow.cc
@@ -31,6 +31,7 @@ src/passes/normalization.cc
 src/passes/gather_control_flow.cc
 src/passes/zero_analysis.cc
 src/passes/constant_folding.cc
+src/passes/dead_code_elimination.cc
 )
 
 add_executable(while_trieste

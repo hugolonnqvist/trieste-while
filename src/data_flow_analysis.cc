@@ -77,49 +77,14 @@ namespace whilelang {
         }
     }
 
-    std::string DataFlowAnalysis::z_analysis_tok_to_str(StateValue value) {
-        if (value.type == TTop) {
-            return "?";
-        } else if (value.type == TZero) {
-            return "0";
-        } else if (value.type == TBottom) {
-            return "⊥";
-        } else {
-            return "N";
-        }
-    }
-
-    void DataFlowAnalysis::log_state_table(Nodes instructions) {
-        int width = 8;
-        int number_of_vars = state_table[instructions[0]].size();
-        std::stringstream str;
-
-        str << std::left << std::setw(width) << "";
-        for (const auto& [key, _] : state_table[instructions[0]]) {
-            str << std::setw(width) << key;
-        }
-
-        str << std::endl;
-        str << std::string(width * (number_of_vars + 1), '-') << std::endl;
-
-        for (size_t i = 0; i < instructions.size(); i++) {
-            str << std::setw(width) << i + 1;
-            for (const auto& [_, st] : state_table[instructions[i]]) {
-                str << std::setw(width) << z_analysis_tok_to_str(st);
-            }
-            str << '\n';
-        }
-        logging::Debug() << str.str();
-    }
-
     void DataFlowAnalysis::forward_worklist_algoritm(
         std::shared_ptr<ControlFlow> control_flow, FlowFn flow_fn,
         JoinFn join_fn) {
         const auto instructions = control_flow->get_instructions();
         const Vars vars = control_flow->get_vars();
-        this->init(instructions, vars);
+		std::deque<Node> worklist{instructions[0]};
 
-        std::deque<Node> worklist{instructions[0]};
+		this->init(instructions, vars);
 
         while (!worklist.empty()) {
             Node inst = worklist.front();
@@ -131,6 +96,39 @@ namespace whilelang {
             this->set_state_in_table(inst, out_state);
 
             for (Node succ : control_flow->successors(inst)) {
+                State succ_state = this->get_state_in_table(succ);
+                State new_succ_state =
+                    this->join(out_state, succ_state, join_fn);
+
+                if (!state_equals(new_succ_state, succ_state)) {
+                    this->set_state_in_table(succ, new_succ_state);
+                    worklist.push_back(succ);
+                }
+            }
+        }
+    }
+
+    void DataFlowAnalysis::backward_worklist_algoritm(
+        std::shared_ptr<ControlFlow> control_flow, FlowFn flow_fn,
+        JoinFn join_fn) {
+        const auto instructions = control_flow->get_instructions();
+        const Vars vars = control_flow->get_vars();
+		
+		// Append last instruction
+        std::deque<Node> worklist{instructions.back()};
+	
+		this->init(instructions, vars);
+
+        while (!worklist.empty()) {
+            Node inst = worklist.front();
+            worklist.pop_front();
+
+            State in_state = this->get_state_in_table(inst);
+            State out_state = flow_fn(inst, in_state);
+
+            this->set_state_in_table(inst, out_state);
+
+            for (Node succ : control_flow->predecessors(inst)) {
                 State succ_state = this->get_state_in_table(succ);
                 State new_succ_state =
                     this->join(out_state, succ_state, join_fn);

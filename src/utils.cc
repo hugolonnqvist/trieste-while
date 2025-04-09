@@ -64,8 +64,43 @@ namespace whilelang {
     }
 
     std::string get_identifier(const Node& node) {
-        std::string text(node->location().view());
-        return text;
+		return std::string(node->location().view());
+    }
+
+    std::string z_analysis_tok_to_str(StateValue value) {
+        if (value.type == TTop) {
+            return "?";
+        } else if (value.type == TZero) {
+            return "0";
+        } else if (value.type == TBottom) {
+            return "⊥";
+        } else {
+            return "N";
+        }
+    }
+
+    void log_z_state_table(const Nodes instructions,
+                           NodeMap<State> state_table) {
+        int width = 8;
+        int number_of_vars = state_table[instructions[0]].size();
+        std::stringstream str;
+
+        str << std::left << std::setw(width) << "";
+        for (const auto& [key, _] : state_table[instructions[0]]) {
+            str << std::setw(width) << key;
+        }
+
+        str << std::endl;
+        str << std::string(width * (number_of_vars + 1), '-') << std::endl;
+
+        for (size_t i = 0; i < instructions.size(); i++) {
+            str << std::setw(width) << i + 1;
+            for (const auto& [_, st] : state_table[instructions[i]]) {
+                str << std::setw(width) << z_analysis_tok_to_str(st);
+            }
+            str << '\n';
+        }
+        logging::Debug() << str.str();
     }
 
     std::string cp_analysis_tok_to_str(StateValue val) {
