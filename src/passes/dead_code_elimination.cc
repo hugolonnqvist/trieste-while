@@ -46,7 +46,6 @@ namespace whilelang {
         if (inst == Assign) {
             auto ident = inst / Ident;
             auto aexpr = inst / Rhs;
-
             auto var = get_identifier(ident);
 
             gen_defs = get_aexpr_defs((inst / Rhs) / Expr);
@@ -70,11 +69,33 @@ namespace whilelang {
     PassDef dead_code_elimination(std::shared_ptr<ControlFlow> control_flow) {
         auto set_lattice = std::make_shared<SetLattice>();
 
+        // Return bool value of bexpr if it can be calculated, otherwiese
+        // returns std::nullopt
+        auto get_bexpr_value = [](Node bexpr) -> std::optional<bool> {
+            auto expr = bexpr / Expr;
+            if (expr->type().in({True, False})) {
+                return expr == True ? true : false;
+            } else if (expr->type().in({LT, Equals})) {
+                auto lhs = (expr / Lhs) / Expr;
+                auto rhs = (expr / Rhs) / Expr;
+
+                if (lhs == Int && rhs == Int) {
+                    if (expr == LT) {
+                        return get_int_value(lhs) < get_int_value(rhs);
+                    } else {
+                        return get_int_value(lhs) == get_int_value(rhs);
+                    }
+                }
+                return std::nullopt;
+            } else {
+                return std::nullopt;
+            }
+        };
         // clang-format off
 		PassDef dead_code_elimination = {
             "dead_code_elimination",
-            dead_code_elim_wf,
-            dir::topdown,
+            normalization_wf,
+            dir::bottomup | dir::once,
             {
 				T(Stmt) << (T(Assign)[Assign] << (T(Ident)[Ident] * T(AExpr)[AExpr])) >>
 					[=](Match &_) -> Node
@@ -88,9 +109,74 @@ namespace whilelang {
 						} else {
 							return {};
 						}
-						return _(AExpr);
 					},
-				// TODO Add branch simplification/elimination
+
+				T(Stmt)[Stmt] << T(Semi)[Semi] >>
+					[](Match &_) -> Node
+					{
+						if (_(Semi)->empty()) {
+							if (_(Stmt)->parent()->in({If, While})) {
+								return Stmt << Skip;
+							}
+							return {};	
+						}
+						return NoChange;
+					},
+
+				T(Stmt) << T(Skip) >>
+					[=](Match &) -> Node
+					{
+						return {};
+					},
+
+				T(Stmt) << (T(If) << (T(BExpr)[BExpr] * T(Stmt)[Then] * T(Stmt)[Else])) >>
+					[=](Match &_) -> Node
+					{
+						auto bexpr = _(BExpr);
+						auto bexpr_value = get_bexpr_value(bexpr);
+
+						if (bexpr_value.has_value()) {
+							if (*bexpr_value) {
+								return Reapply << _(Then);
+							} else {
+								return Reapply << _(Else);
+							}
+						} else {
+							return NoChange;
+						}
+					},
+
+				T(Stmt) << (T(While) << (T(BExpr)[BExpr] * End)) >>
+					[=](Match &_) -> Node
+					{
+						auto bexpr = _(BExpr);
+						auto bexpr_value = get_bexpr_value(bexpr);
+
+						if (bexpr_value.has_value() && !bexpr_value.value()) {
+							return {};
+						}
+
+						return Stmt << (While << bexpr 
+											  << (Stmt << Skip));
+					},
+
+				T(Stmt) << (T(While) << (T(BExpr)[BExpr] * T(Stmt)[Do])) >>
+					[=](Match &_) -> Node
+					{
+						auto bexpr = _(BExpr);
+						auto bexpr_value = get_bexpr_value(bexpr);
+
+						if (bexpr_value.has_value()) {
+							if (*bexpr_value) {
+								return NoChange;
+							} else {
+								return {};
+							}
+						} else {
+							return NoChange;
+						}
+					},
+
 
 			}
 		};
@@ -127,5 +213,21 @@ namespace whilelang {
         });
 
         return dead_code_elimination;
+    }
+
+    // clang-format off
+    PassDef dead_code_cleanup() {
+        return {
+			"dead_code_cleanup",
+            normalization_wf,
+            dir::topdown | dir::once,
+			{
+				In(Semi) * T(Stmt) << T(Semi)[Semi] >>
+					[](Match &_) -> Node
+					{
+						return Seq << *_(Semi);
+					},
+			}
+		};
     }
 }

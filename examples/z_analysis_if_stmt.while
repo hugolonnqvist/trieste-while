@@ -2,3 +2,6 @@ a := 1;
 if true then {th := 1; th:=2; } else {th := 2; el := 0};
 a := 3;
 a := 0;
+output el;
+output a;
+output th;

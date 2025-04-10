@@ -9,8 +9,8 @@ int main(int argc, char const* argv[]) {
     std::filesystem::path input_path;
     app.add_option("input", input_path, "Path to the input file ")->required();
 
-    bool run;
-	bool constant_analysis;
+    bool run = false;
+	bool constant_analysis = false;
     app.add_flag("-r,--run", run, "Run the program (prompting inputs).");
     app.add_flag("-c,--constant-analysis", constant_analysis, "Compile and run constant analysis on the program.");
 
@@ -37,6 +37,7 @@ int main(int argc, char const* argv[]) {
         if (!result.ok) {
             trieste::logging::Error err;
             result.print_errors(err);
+			trieste::logging::Debug() << result.ast;
             return 1;
         }
 		trieste::logging::Debug() << result.ast;

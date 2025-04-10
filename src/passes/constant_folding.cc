@@ -56,7 +56,7 @@ namespace whilelang {
 
     using State = typename DataFlowAnalysis<CPLatticeValue>::State;
 
-    CPLatticeValue atom_flow(Node inst, State incoming_state) {
+    CPLatticeValue atom_flow_helper(Node inst, State incoming_state) {
         if (inst == Atom) {
             Node expr = inst / Expr;
 
@@ -92,13 +92,13 @@ namespace whilelang {
 
             auto expr = (inst / Rhs) / Expr;
             if (expr == Atom) {
-                incoming_state[ident] = atom_flow(expr, incoming_state);
+                incoming_state[ident] = atom_flow_helper(expr, incoming_state);
             } else {
                 Node lhs = expr / Lhs;
                 Node rhs = expr / Rhs;
 
-                CPLatticeValue lhs_value = atom_flow(lhs, incoming_state);
-                CPLatticeValue rhs_value = atom_flow(rhs, incoming_state);
+                auto lhs_value = atom_flow_helper(lhs, incoming_state);
+                auto rhs_value = atom_flow_helper(rhs, incoming_state);
 
                 if (lhs_value.type == CPAbstractType::Constant &&
                     rhs_value.type == CPAbstractType::Constant) {
@@ -220,8 +220,7 @@ namespace whilelang {
         });
 
         constant_folding.post([=](Node) {
-            // Clear
-            *control_flow = ControlFlow();
+            control_flow->clear();
             return 0;
         });
 

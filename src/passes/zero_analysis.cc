@@ -109,8 +109,6 @@ namespace whilelang {
             control_flow->log_instructions();
             analysis->log_state_table(control_flow->get_instructions());
 
-            // Clear
-            *control_flow = ControlFlow();
             return 0;
         });
 

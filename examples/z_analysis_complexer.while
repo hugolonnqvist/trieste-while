@@ -22,3 +22,8 @@ if (b = 1) then {
 	}
 };
 post := 3;
+output th1;
+output th2;
+output el1;
+output el2;
+output b;
