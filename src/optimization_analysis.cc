@@ -3,10 +3,10 @@
 namespace whilelang {
     using namespace trieste;
 
-    Rewriter optimization_analysis() {
+    Rewriter optimization_analysis(bool& changes) {
         auto control_flow = std::make_shared<ControlFlow>();
 
-		Rewriter rewriter = {
+        Rewriter rewriter = {
             "optimization_analysis",
             {
                 gather_instructions(control_flow),
@@ -16,12 +16,12 @@ namespace whilelang {
 
                 gather_instructions(control_flow),
                 gather_flow_graph(control_flow),
-                dead_code_elimination(control_flow),
-				dead_code_cleanup(),
+                dead_code_elimination(control_flow, changes),
+                dead_code_cleanup(changes),
             },
             whilelang::normalization_wf,
         };
 
-		return rewriter;
+        return rewriter;
     }
 }
