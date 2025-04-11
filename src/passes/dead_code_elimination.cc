@@ -113,18 +113,22 @@ namespace whilelang {
 						}
 					},
 
-				T(Stmt)[Stmt] << T(Semi)[Semi] >>
+				T(Stmt)[Stmt] << (T(Semi)[Semi] << End) >>
 					[&changes](Match &_) -> Node
 					{
-						if (_(Semi)->empty()) {
-							if (_(Stmt)->parent()->in({If, While})) {
-								// Make sure if and while statements don't have their body removed
-								changes = true;
-								return Stmt << (Semi << (Stmt << Skip));
-							}
-							return {};	
+						if (_(Stmt)->parent()->in({If, While})) {
+							// Make sure if and while statements don't have their body removed
+							changes = true;
+							return Stmt << (Semi << (Stmt << Skip));
 						}
-						return NoChange;
+						return {};	
+					},
+
+				In(Semi) * ((Any[Stmt] * (T(Stmt) << T(Skip))) /
+						   ((T(Stmt) << T(Skip)) * Any[Stmt])) >> 
+					[](Match &_) -> Node
+					{
+						return Reapply << _(Stmt);
 					},
 
 				T(Stmt) << (T(If) << (T(BExpr)[BExpr] * T(Stmt)[Then] * T(Stmt)[Else])) >>

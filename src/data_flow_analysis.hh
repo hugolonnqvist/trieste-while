@@ -16,9 +16,6 @@ namespace whilelang {
 
         LatticeValue get_lattice_value(Node inst, std::string var);
 
-        void init(const Nodes instructions, const Vars vars,
-                  LatticeValue first_state, LatticeValue bottom);
-
         State join(const State x, const State y);
 
         void set_state(const Node inst, LatticeValue value);
@@ -35,6 +32,9 @@ namespace whilelang {
         FlowFn flow_fn;
 
         bool state_equals(State x, State y);
+
+        void init(const Nodes instructions, const Vars vars,
+                  LatticeValue first_state, LatticeValue bottom);
     };
 
     template <typename LatticeValue>
