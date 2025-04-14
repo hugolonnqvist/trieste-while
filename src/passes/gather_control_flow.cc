@@ -84,7 +84,7 @@ namespace whilelang {
                 },
 
                 // General case of a sequence of statements
-                In(Semi) * T(Stmt)[Prev] * T(Stmt)[Post] >>
+                In(Block) * T(Stmt)[Prev] * T(Stmt)[Post] >>
                     [control_flow](Match &_) -> Node {
                     auto prev = _(Prev);
                     auto post = _(Post);

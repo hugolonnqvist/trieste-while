@@ -9,6 +9,11 @@ int main(int argc, char const *argv[]) {
     std::filesystem::path input_path;
     app.add_option("input", input_path, "Path to the input file ")->required();
 
+    std::string log_level;
+    app.add_option("-l,--log", log_level,
+                   "Set the log level (None, Error, Output, Warn, Info, Debug, Trace).")
+                   ->check(trieste::logging::set_log_level_from_string);
+
     bool run = false;
     bool constant_analysis = false;
     app.add_flag("-r,--run", run, "Run the program (prompting inputs).");
@@ -46,8 +51,9 @@ int main(int argc, char const *argv[]) {
             trieste::logging::Debug() << result.ast;
             return 1;
         }
-        std::cout << result.ast;
-    } catch (const std::exception &e) {
+        trieste::logging::Debug() << "AST after all passes: " << std::endl
+                                  << result.ast;
+    } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
     }
 

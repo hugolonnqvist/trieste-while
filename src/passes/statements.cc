@@ -9,9 +9,12 @@ namespace whilelang {
             statements_wf,
             dir::bottomup | dir::once,
             {
-                // Make sure there is always one semi stmt
-                T(Program) << (T(Stmt)[Stmt] << !T(Semi)) >> [](Match &_)
-                    -> Node { return Program << (Stmt << (Semi << _(Stmt))); },
+				// Make sure there is always one block stmt
+                T(Program) << (T(Stmt)[Stmt] << !T(Block)) >>
+                    [](Match &_) -> Node
+                    {
+                        return Program << (Stmt << (Block << _(Stmt)));
+                    },
 
                 T(File) << (T(Stmt)[Stmt] * End) >> [](Match &_) -> Node {
                     return Reapply << (Program << _(Stmt));
@@ -25,23 +28,39 @@ namespace whilelang {
                     return Stmt << (Assign << _(Ident) << _(Rhs));
                 },
 
-                (T(If) << T(BExpr)[BExpr]) * (T(Then) << T(Stmt)[Then]) *
-                        (T(Else) << T(Stmt)[Else]) >>
-                    [](Match &_) -> Node {
-                    return Stmt << (If << _(BExpr) << _(Then) << _(Else));
-                },
+                (T(If) << T(BExpr)[BExpr]) * (T(Then) << T(Stmt)[Then]) * (T(Else) << T(Stmt)[Else]) >>
+                    [](Match &_) -> Node
+                    {
+                        auto then = _(Then)->front() == Block ?
+                                    _(Then) :
+                                    Stmt << (Block << _(Then));
+                        auto else_ = _(Else)->front() == Block ?
+                                     _(Else) :
+                                     Stmt << (Block << _(Else));
+                        return Stmt << (If << _(BExpr)
+                                           << then
+                                           << else_);
+                    },
 
                 (T(While) << T(BExpr)[BExpr]) * (T(Do) << T(Stmt)[Do]) >>
-                    [](Match &_) -> Node {
-                    return Stmt << (While << _(BExpr) << _(Do));
-                },
+                    [](Match &_) -> Node
+                    {
+                        auto do_ = _(Do)->front() == Block ?
+                                   _(Do) :
+                                   Stmt << (Block << _(Do));
+                        return Stmt << (While << _(BExpr)
+                                              << do_);
+                    },
 
                 (T(Output) << T(AExpr)[AExpr]) >> [](Match &_) -> Node {
                     return Stmt << (Output << _(AExpr));
                 },
 
                 T(Semi)[Semi] << T(Stmt) >>
-                    [](Match &_) -> Node { return Stmt << _(Semi); },
+                    [](Match &_) -> Node
+                    {
+                        return Stmt << (Block << *_(Semi));
+                    },
 
                 T(Group) << (T(Stmt)[Stmt] * End) >>
                     [](Match &_) -> Node { return _(Stmt); },
