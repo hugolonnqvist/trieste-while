@@ -11,26 +11,22 @@ namespace whilelang {
             {
                 In(Program) * T(Stmt)[Stmt] >> [](Match &_) -> Node {
                     auto stmt = _(Stmt);
-                    if ((stmt / Stmt) != Semi) {
-                        return Instructions
-                            << (Normalize << (Stmt << (Semi << stmt)));
-                    }
                     return Instructions << (Normalize << stmt);
                 },
 
                 T(Normalize)
                         << (T(Stmt) << T(
-                                Semi, Assign, If, While, Output, Skip)[Stmt]) >>
+                                Block, Assign, If, While, Output, Skip)[Stmt]) >>
                     [](Match &_) -> Node {
                     return Stmt << (Normalize << _(Stmt));
                 },
 
-                T(Normalize) << T(Semi)[Semi] >> [](Match &_) -> Node {
-                    Nodes res = Nodes();
-                    for (auto child : *_(Semi)) {
-                        res.push_back(Stmt << (Normalize << child / Stmt));
+                T(Normalize) << T(Block)[Block] >> [](Match &_) -> Node {
+                    Node res = Block;
+                    for (auto child : *_(Block)) {
+                        res << (Stmt << (Normalize << child / Stmt));
                     }
-                    return Semi << res;
+                    return res;
                 },
 
                 T(Normalize)
@@ -75,7 +71,7 @@ namespace whilelang {
                             << (_(Op)->type()
                                 << (Normalize << lhs) << (Normalize << rhs)));
 
-                    return Seq << (Lift << Semi << (Stmt << assign))
+                    return Seq << (Lift << Block << (Stmt << assign))
                                << (Atom << id->clone());
                 },
 
@@ -118,11 +114,11 @@ namespace whilelang {
 
                 T(Normalize) << (T(BExpr)[BExpr] << T(And, Or)[Op]) >>
                     [](Match &_) -> Node {
-                    Nodes res = Nodes();
+                    Node res = _(Op)->type();
                     for (auto child : *_(Op)) {
-                        res.push_back(Normalize << child);
+                        res << (Normalize << child);
                     }
-                    return BExpr << (_(Op)->type() << res);
+                    return BExpr << res;
                 },
 
                 T(Normalize) << (T(BExpr)[BExpr] << T(Not)[Op]) >>

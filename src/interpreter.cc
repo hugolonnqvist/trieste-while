@@ -8,7 +8,7 @@ namespace whilelang {
         return {
             "interpreter",
             {eval()},
-            whilelang::statements_wf,
+            whilelang::normalization_wf,
         };
     }
 }

@@ -114,18 +114,18 @@ namespace whilelang {
                     }
                 },
 
-                T(Stmt)[Stmt] << (T(Semi)[Semi] << End) >>
+                T(Stmt)[Stmt] << (T(Block)[Block] << End) >>
                     [&changes](Match &_) -> Node {
                     if (_(Stmt)->parent()->in({If, While})) {
                         // Make sure if and while statements don't have their
                         // body removed
                         changes = true;
-                        return Stmt << (Semi << (Stmt << Skip));
+                        return Stmt << (Block << (Stmt << Skip));
                     }
                     return {};
                 },
 
-                In(Semi) *
+                In(Block) *
                         ((Any[Stmt] * (T(Stmt) << T(Skip))) /
                          ((T(Stmt) << T(Skip)) * Any[Stmt])) >>
                     [](Match &_) -> Node { return Reapply << _(Stmt); },
@@ -208,8 +208,8 @@ namespace whilelang {
             normalization_wf,
             dir::topdown | dir::once,
             {
-                In(Semi) * T(Stmt) << T(Semi)[Semi] >>
-                    [](Match &_) -> Node { return Seq << *_(Semi); },
+                In(Block) * T(Stmt) << T(Block)[Block] >>
+                    [](Match &_) -> Node { return Seq << *_(Block); },
             }};
 
         dead_code_cleanup.post([&changes](Node n) {

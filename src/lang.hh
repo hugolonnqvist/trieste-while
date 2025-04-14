@@ -10,7 +10,7 @@ namespace whilelang {
 
     // Program
     inline const auto Program =
-        TokenDef("program", flag::symtab | flag::defbeforeuse);
+        TokenDef("program");
 
     // Statements
     inline const auto Assign = TokenDef(":=", flag::lookup);
@@ -56,6 +56,8 @@ namespace whilelang {
     // Grouping tokens
     inline const auto Paren = TokenDef("paren");
     inline const auto Brace = TokenDef("brace");
+
+    inline const auto Block = TokenDef("block", flag::symtab | flag::defbeforeuse);
 
     inline const auto Stmt = TokenDef("stmt");
     inline const auto Expr = TokenDef("expr");

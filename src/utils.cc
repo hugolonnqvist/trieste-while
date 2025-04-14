@@ -10,14 +10,14 @@ namespace whilelang {
     }
 
     Node get_first_basic_child(Node n) {
-        while (n->type().in({Semi, Stmt, While, If})) {
+        while (n->type().in({Block, Stmt, While, If})) {
             n = n->front();
         }
         return n;
     }
 
     Node get_last_basic_child(Node n) {
-        while (n->type().in({Semi, Stmt, While})) {
+        while (n->type().in({Block, Stmt, While})) {
             n = n->back();
         }
         return n;
@@ -27,7 +27,7 @@ namespace whilelang {
         std::set<Node> children;
         Node curr = n;
 
-        while (curr->type().in({Semi, Stmt})) {
+        while (curr->type().in({Block, Stmt})) {
             curr = curr->back();
         }
 
