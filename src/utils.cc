@@ -5,7 +5,7 @@
 namespace whilelang {
     using namespace trieste;
 
-    void append_to_set(std::set<Node>& set, std::set<Node> new_set) {
+    void append_to_set(std::set<Node> &set, std::set<Node> new_set) {
         set.insert(new_set.begin(), new_set.end());
     }
 
@@ -46,7 +46,7 @@ namespace whilelang {
         return children;
     }
 
-    int get_int_value(const Node& node) {
+    int get_int_value(const Node &node) {
         std::string text(node->location().view());
         return std::stoi(text);
     }
@@ -63,9 +63,11 @@ namespace whilelang {
         }
     }
 
-    std::string get_identifier(const Node& node) {
+    std::string get_identifier(const Node &node) {
         return std::string(node->location().view());
     }
 
-    Node create_const_node(int value) { return Int ^ std::to_string(value); };
+    Node create_const_node(int value) {
+        return Int ^ std::to_string(value);
+    };
 }

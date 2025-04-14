@@ -10,11 +10,11 @@ namespace whilelang {
 
     NodeSet get_last_basic_children(Node n);
 
-    int get_int_value(const Node& node);
+    int get_int_value(const Node &node);
 
     int calc_arithmetic_op(Token op, int x, int y);
 
-    std::string get_identifier(const Node& node);
+    std::string get_identifier(const Node &node);
 
     Node create_const_node(int value);
 }

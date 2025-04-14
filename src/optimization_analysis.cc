@@ -3,7 +3,7 @@
 namespace whilelang {
     using namespace trieste;
 
-    Rewriter optimization_analysis(bool& changes) {
+    Rewriter optimization_analysis(bool &changes) {
         auto control_flow = std::make_shared<ControlFlow>();
 
         Rewriter rewriter = {

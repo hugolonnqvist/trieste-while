@@ -4,9 +4,9 @@
 namespace whilelang {
     using namespace trieste;
 
-	Reader reader();
-	Rewriter interpret();
-	Rewriter optimization_analysis(bool& changes);
+    Reader reader();
+    Rewriter interpret();
+    Rewriter optimization_analysis(bool &changes);
 
     // Program
     inline const auto Program =
@@ -70,10 +70,10 @@ namespace whilelang {
     inline const auto Post = TokenDef("post");
     inline const auto Inst = TokenDef("inst");
 
-	// Evaluation
-	inline const auto Eval = TokenDef("eval");
+    // Evaluation
+    inline const auto Eval = TokenDef("eval");
 
-	// Normalization
+    // Normalization
     inline const auto Normalize = TokenDef("normalize");
     inline const auto Atom = TokenDef("atom");
     inline const auto Instructions = TokenDef("instructions");

@@ -5,9 +5,9 @@
 namespace whilelang {
     using namespace trieste;
 
-    template <typename LatticeValue>
+    template<typename LatticeValue>
     class DataFlowAnalysis {
-       public:
+      public:
         using State = std::map<std::string, LatticeValue>;
         using JoinFn = std::function<LatticeValue(LatticeValue, LatticeValue)>;
         using FlowFn = std::function<State(Node, State)>;
@@ -21,34 +21,39 @@ namespace whilelang {
         void set_state(const Node inst, LatticeValue value);
 
         void forward_worklist_algoritm(
-            std::shared_ptr<ControlFlow> control_flow, LatticeValue first_state,
+            std::shared_ptr<ControlFlow> control_flow,
+            LatticeValue first_state,
             LatticeValue bottom);
 
         void log_state_table(const Nodes instructions);
 
-       private:
+      private:
         NodeMap<State> state_table;
         JoinFn join_fn;
         FlowFn flow_fn;
 
         bool state_equals(State x, State y);
 
-        void init(const Nodes instructions, const Vars vars,
-                  LatticeValue first_state, LatticeValue bottom);
+        void init(
+            const Nodes instructions,
+            const Vars vars,
+            LatticeValue first_state,
+            LatticeValue bottom);
     };
 
-    template <typename LatticeValue>
+    template<typename LatticeValue>
     DataFlowAnalysis<LatticeValue>::DataFlowAnalysis(JoinFn join, FlowFn flow) {
         this->state_table = NodeMap<State>();
         this->join_fn = join;
         this->flow_fn = flow;
     }
 
-    template <typename LatticeValue>
-    void DataFlowAnalysis<LatticeValue>::init(const Nodes instructions,
-                                              const Vars vars,
-                                              LatticeValue first_state,
-                                              LatticeValue bottom) {
+    template<typename LatticeValue>
+    void DataFlowAnalysis<LatticeValue>::init(
+        const Nodes instructions,
+        const Vars vars,
+        LatticeValue first_state,
+        LatticeValue bottom) {
         if (instructions.empty()) {
             throw std::runtime_error("No instructions exist for this program");
         }
@@ -65,13 +70,13 @@ namespace whilelang {
         set_state(instructions[0], first_state);
     }
 
-    template <typename LatticeValue>
+    template<typename LatticeValue>
     LatticeValue DataFlowAnalysis<LatticeValue>::get_lattice_value(
         Node inst, std::string var) {
         return state_table[inst][var];
     }
 
-    template <typename LatticeValue>
+    template<typename LatticeValue>
     typename DataFlowAnalysis<LatticeValue>::State
     DataFlowAnalysis<LatticeValue>::join(const State x, const State y) {
         if (x.size() != y.size()) {
@@ -81,9 +86,10 @@ namespace whilelang {
         State result_state = State();
 
         for (auto it1 = x.begin(), it2 = y.begin();
-             it1 != x.end() && it2 != y.end(); ++it1, ++it2) {
-            const auto& [key1, val1] = *it1;
-            const auto& [key2, val2] = *it2;
+             it1 != x.end() && it2 != y.end();
+             ++it1, ++it2) {
+            const auto &[key1, val1] = *it1;
+            const auto &[key2, val2] = *it2;
 
             if (key1 != key2) {
                 throw std::runtime_error("State keys do not match");
@@ -94,24 +100,25 @@ namespace whilelang {
         return result_state;
     }
 
-    template <typename LatticeValue>
-    void DataFlowAnalysis<LatticeValue>::set_state(const Node inst,
-                                                   LatticeValue value) {
+    template<typename LatticeValue>
+    void DataFlowAnalysis<LatticeValue>::set_state(
+        const Node inst, LatticeValue value) {
         State new_state = State();
 
-        for (auto& [_, old_st] : state_table[inst]) {
+        for (auto &[_, old_st] : state_table[inst]) {
             old_st = value;
         }
     }
 
-    template <typename LatticeValue>
+    template<typename LatticeValue>
     bool DataFlowAnalysis<LatticeValue>::state_equals(State x, State y) {
         if (x.size() != y.size()) {
             throw std::runtime_error("State sizes do not match");
         }
 
         for (auto it1 = x.begin(), it2 = y.begin();
-             it1 != x.end() && it2 != y.end(); ++it1, ++it2) {
+             it1 != x.end() && it2 != y.end();
+             ++it1, ++it2) {
             auto [key1, val1] = *it1;
             auto [key2, val2] = *it2;
 
@@ -126,9 +133,10 @@ namespace whilelang {
         return true;
     }
 
-    template <typename LatticeValue>
+    template<typename LatticeValue>
     void DataFlowAnalysis<LatticeValue>::forward_worklist_algoritm(
-        std::shared_ptr<ControlFlow> control_flow, LatticeValue first_state,
+        std::shared_ptr<ControlFlow> control_flow,
+        LatticeValue first_state,
         LatticeValue bottom) {
         const auto instructions = control_flow->get_instructions();
         const Vars vars = control_flow->get_vars();
@@ -157,15 +165,15 @@ namespace whilelang {
         }
     }
 
-    template <typename LatticeValue>
-    void DataFlowAnalysis<LatticeValue>::log_state_table(
-        const Nodes instructions) {
+    template<typename LatticeValue>
+    void
+    DataFlowAnalysis<LatticeValue>::log_state_table(const Nodes instructions) {
         const int width = 8;
         const int number_of_vars = state_table[instructions[0]].size();
         std::stringstream str_builder;
 
         str_builder << std::left << std::setw(width) << "";
-        for (const auto& [key, _] : state_table[instructions[0]]) {
+        for (const auto &[key, _] : state_table[instructions[0]]) {
             str_builder << std::setw(width) << key;
         }
 
@@ -175,7 +183,7 @@ namespace whilelang {
 
         for (size_t i = 0; i < instructions.size(); i++) {
             str_builder << std::setw(width) << i + 1;
-            for (const auto& [_, value] : state_table[instructions[i]]) {
+            for (const auto &[_, value] : state_table[instructions[i]]) {
                 str_builder << std::setw(width) << value;
             }
             str_builder << '\n';

@@ -1,7 +1,7 @@
-#include <trieste/driver.h>
-
 #include "lang.hh"
 
-int main(int argc, char** argv) {
+#include <trieste/driver.h>
+
+int main(int argc, char **argv) {
     return trieste::Driver(whilelang::reader()).run(argc, argv);
 }

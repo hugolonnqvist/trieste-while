@@ -82,8 +82,8 @@ namespace whilelang {
 
     // Private
 
-    void ControlFlow::append_to_nodemap(NodeMap<NodeSet>& map, Node key,
-                                        Node value) {
+    void ControlFlow::append_to_nodemap(
+        NodeMap<NodeSet> &map, Node key, Node value) {
         auto res = map.find(key);
 
         if (res != map.end()) {
@@ -95,8 +95,8 @@ namespace whilelang {
         }
     }
 
-    void ControlFlow::append_to_nodemap(NodeMap<NodeSet>& map, Node key,
-                                        NodeSet values) {
+    void ControlFlow::append_to_nodemap(
+        NodeMap<NodeSet> &map, Node key, NodeSet values) {
         auto res = map.find(key);
 
         if (res != map.end()) {
@@ -106,8 +106,8 @@ namespace whilelang {
         }
     }
 
-    void ControlFlow::append_to_nodemap(NodeMap<NodeSet>& map, NodeSet nodes,
-                                        Node value) {
+    void ControlFlow::append_to_nodemap(
+        NodeMap<NodeSet> &map, NodeSet nodes, Node value) {
         for (auto it = nodes.begin(); it != nodes.end(); it++) {
             append_to_nodemap(map, *it, value);
         }

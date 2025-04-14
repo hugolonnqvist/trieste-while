@@ -11,12 +11,12 @@ namespace whilelang {
     struct ZeroLatticeValue {
         ZeroAbstractType type;
 
-        bool operator==(const ZeroLatticeValue& other) const {
+        bool operator==(const ZeroLatticeValue &other) const {
             return type == other.type;
         }
 
-        friend std::ostream& operator<<(std::ostream& os,
-                                        const ZeroLatticeValue& value) {
+        friend std::ostream &
+        operator<<(std::ostream &os, const ZeroLatticeValue &value) {
             switch (value.type) {
                 case ZeroAbstractType::Top:
                     os << "?";
@@ -34,12 +34,18 @@ namespace whilelang {
             return os;
         }
 
-        static ZeroLatticeValue top() { return {ZeroAbstractType::Top}; }
-        static ZeroLatticeValue zero() { return {ZeroAbstractType::Zero}; }
+        static ZeroLatticeValue top() {
+            return {ZeroAbstractType::Top};
+        }
+        static ZeroLatticeValue zero() {
+            return {ZeroAbstractType::Zero};
+        }
         static ZeroLatticeValue non_zero() {
             return {ZeroAbstractType::NonZero};
         }
-        static ZeroLatticeValue bottom() { return {ZeroAbstractType::Bottom}; }
+        static ZeroLatticeValue bottom() {
+            return {ZeroAbstractType::Bottom};
+        }
     };
 
     using State = typename DataFlowAnalysis<ZeroLatticeValue>::State;
@@ -52,9 +58,9 @@ namespace whilelang {
             if (rhs == Atom) {
                 auto atom = rhs / Expr;
                 if (atom == Int) {
-                    incoming_state[var].type = get_int_value(atom) == 0
-                                                   ? ZeroAbstractType::Zero
-                                                   : ZeroAbstractType::NonZero;
+                    incoming_state[var].type = get_int_value(atom) == 0 ?
+                        ZeroAbstractType::Zero :
+                        ZeroAbstractType::NonZero;
                 } else if (atom == Ident) {
                     std::string rhs_var = get_identifier(atom);
                     incoming_state[var] = incoming_state[rhs_var];
@@ -104,8 +110,8 @@ namespace whilelang {
             auto first_state = ZeroLatticeValue::top();
             auto bottom = ZeroLatticeValue::bottom();
 
-            analysis->forward_worklist_algoritm(control_flow, first_state,
-                                                bottom);
+            analysis->forward_worklist_algoritm(
+                control_flow, first_state, bottom);
             control_flow->log_instructions();
             analysis->log_state_table(control_flow->get_instructions());
 

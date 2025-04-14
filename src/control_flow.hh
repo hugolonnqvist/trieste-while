@@ -7,25 +7,35 @@ namespace whilelang {
     using Vars = std::set<std::string>;
 
     class ControlFlow {
-       public:
+      public:
         ControlFlow();
 
-		void clear() {
-			instructions.clear();
-			vars.clear();
-			predecessor.clear();
-			successor.clear();
-		}	
+        void clear() {
+            instructions.clear();
+            vars.clear();
+            predecessor.clear();
+            successor.clear();
+        }
 
-        const NodeSet successors(Node node) { return successor[node]; };
+        const NodeSet successors(Node node) {
+            return successor[node];
+        };
 
-        const NodeSet predecessors(Node node) { return predecessor[node]; };
+        const NodeSet predecessors(Node node) {
+            return predecessor[node];
+        };
 
-        const Nodes get_instructions() { return instructions; };
+        const Nodes get_instructions() {
+            return instructions;
+        };
 
-		const Vars get_vars() { return vars; };
+        const Vars get_vars() {
+            return vars;
+        };
 
-        void add_instruction(Node inst) { instructions.push_back(inst); };
+        void add_instruction(Node inst) {
+            instructions.push_back(inst);
+        };
 
         void add_var(Node ident);
 
@@ -40,14 +50,14 @@ namespace whilelang {
         void log_predecessors_and_successors();
         void log_instructions();
 
-       private:
+      private:
         Nodes instructions;
         Vars vars;
         NodeMap<NodeSet> predecessor;
         NodeMap<NodeSet> successor;
 
-        void append_to_nodemap(NodeMap<NodeSet>& map, Node key, Node value);
-        void append_to_nodemap(NodeMap<NodeSet>& map, Node key, NodeSet values);
-        void append_to_nodemap(NodeMap<NodeSet>& map, NodeSet nodes, Node prev);
+        void append_to_nodemap(NodeMap<NodeSet> &map, Node key, Node value);
+        void append_to_nodemap(NodeMap<NodeSet> &map, Node key, NodeSet values);
+        void append_to_nodemap(NodeMap<NodeSet> &map, NodeSet nodes, Node prev);
     };
 }

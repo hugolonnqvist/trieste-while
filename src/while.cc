@@ -1,10 +1,9 @@
-#include <trieste/trieste.h>
-
-#include <CLI/CLI.hpp>
-
 #include "lang.hh"
 
-int main(int argc, char const* argv[]) {
+#include <CLI/CLI.hpp>
+#include <trieste/trieste.h>
+
+int main(int argc, char const *argv[]) {
     CLI::App app;
 
     std::filesystem::path input_path;
@@ -13,14 +12,16 @@ int main(int argc, char const* argv[]) {
     bool run = false;
     bool constant_analysis = false;
     app.add_flag("-r,--run", run, "Run the program (prompting inputs).");
-    app.add_flag("-c,--constant-analysis", constant_analysis,
-                 "Compile and run constant analysis on the program.");
+    app.add_flag(
+        "-c,--constant-analysis",
+        constant_analysis,
+        "Compile and run constant analysis on the program.");
 
     // trieste::logging::set_log_level_from_string("Debug");
 
     try {
         app.parse(argc, argv);
-    } catch (const CLI::ParseError& e) {
+    } catch (const CLI::ParseError &e) {
         return app.exit(e);
     }
 
@@ -35,7 +36,8 @@ int main(int argc, char const* argv[]) {
             if (constant_analysis)
                 result = result >> whilelang::optimization_analysis(changes);
         } while (changes);
-        if (run) result = result >> whilelang::interpret();
+        if (run)
+            result = result >> whilelang::interpret();
 
         // If any result above was not ok it will carry through to here
         if (!result.ok) {
@@ -44,8 +46,8 @@ int main(int argc, char const* argv[]) {
             trieste::logging::Debug() << result.ast;
             return 1;
         }
-		std::cout << result.ast;
-    } catch (const std::exception& e) {
+        std::cout << result.ast;
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
     }
 

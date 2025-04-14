@@ -10,7 +10,7 @@ namespace whilelang {
         CPAbstractType type;
         std::optional<int> value;
 
-        bool operator==(const CPLatticeValue& other) const {
+        bool operator==(const CPLatticeValue &other) const {
             if (type == other.type) {
                 if (type == CPAbstractType::Constant) {
                     return value == other.value;
@@ -21,8 +21,8 @@ namespace whilelang {
             return false;
         }
 
-        friend std::ostream& operator<<(std::ostream& os,
-                                        const CPLatticeValue& lattice_value) {
+        friend std::ostream &
+        operator<<(std::ostream &os, const CPLatticeValue &lattice_value) {
             switch (lattice_value.type) {
                 case CPAbstractType::Top:
                     os << "?";
@@ -159,59 +159,62 @@ namespace whilelang {
             return atom;
         };
 
-        // clang-format off
-        PassDef constant_folding =  {
+        PassDef constant_folding = {
             "constant_folding",
             normalization_wf,
             dir::bottomup | dir::once,
             {
-				T(Assign)[Assign] << (T(Ident)[Ident] * (T(AExpr) << T(Add, Sub, Mul)[Op])) >>
-					[=](Match &_) -> Node 
-					{
-						auto inst = _(Assign);
-						auto ident = _(Ident);
-						
-						auto lattice_value = analysis->get_lattice_value(inst, get_identifier(ident));	
-						
-						if (lattice_value.type == CPAbstractType::Constant) {
-							return Assign << ident
-										  << (AExpr << ident_to_const(*lattice_value.value));
-						} else {
-							auto op = _(Op);
-							return Assign << ident
-										  << (AExpr << (op->type() << try_atom_to_const(inst, op / Lhs) 
-																   << try_atom_to_const(inst, op / Rhs)));
-						}
-					},
+                T(Assign)[Assign]
+                        << (T(Ident)[Ident] *
+                            (T(AExpr) << T(Add, Sub, Mul)[Op])) >>
+                    [=](Match &_) -> Node {
+                    auto inst = _(Assign);
+                    auto ident = _(Ident);
 
+                    auto lattice_value = analysis->get_lattice_value(
+                        inst, get_identifier(ident));
 
-				T(Output)[Output] << (T(Atom)[Atom] << T(Ident)) >>
-					[=](Match &_) -> Node 
-					{
-						auto inst = _(Output);
+                    if (lattice_value.type == CPAbstractType::Constant) {
+                        return Assign
+                            << ident
+                            << (AExpr << ident_to_const(*lattice_value.value));
+                    } else {
+                        auto op = _(Op);
+                        return Assign
+                            << ident
+                            << (AExpr
+                                << (op->type()
+                                    << try_atom_to_const(inst, op / Lhs)
+                                    << try_atom_to_const(inst, op / Rhs)));
+                    }
+                },
 
-						return Output << try_atom_to_const(inst, _(Atom));
-					},
+                T(Output)[Output] << (T(Atom)[Atom] << T(Ident)) >>
+                    [=](Match &_) -> Node {
+                    auto inst = _(Output);
 
-				T(BExpr)[BExpr] << (T(LT, Equals)[Op] << (T(Atom)[Lhs] * T(Atom)[Rhs]))>>
-					[=](Match &_) -> Node 
-					{
-						auto inst = _(BExpr);
+                    return Output << try_atom_to_const(inst, _(Atom));
+                },
 
-						return BExpr << (_(Op)->type() << try_atom_to_const(inst, _(Lhs))	
-													   << try_atom_to_const(inst, _(Rhs)));
-				
-					},
-			}
-		};
+                T(BExpr)[BExpr]
+                        << (T(LT, Equals)[Op]
+                            << (T(Atom)[Lhs] * T(Atom)[Rhs])) >>
+                    [=](Match &_) -> Node {
+                    auto inst = _(BExpr);
+
+                    return BExpr
+                        << (_(Op)->type() << try_atom_to_const(inst, _(Lhs))
+                                          << try_atom_to_const(inst, _(Rhs)));
+                },
+            }};
 
         // clang-format on
         constant_folding.pre([=](Node) {
             auto first_state = CPLatticeValue::top();
             auto bottom = CPLatticeValue::bottom();
 
-            analysis->forward_worklist_algoritm(control_flow, first_state,
-                                                bottom);
+            analysis->forward_worklist_algoritm(
+                control_flow, first_state, bottom);
 
             control_flow->log_instructions();
             analysis->log_state_table(control_flow->get_instructions());

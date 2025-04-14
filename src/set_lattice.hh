@@ -26,9 +26,9 @@ namespace whilelang {
             log_power_lattice(instructions, in_set);
         }
 
-       private:
-        void log_power_lattice(const Nodes instructions,
-                               NodeMap<Vars> lattice) {
+      private:
+        void
+        log_power_lattice(const Nodes instructions, NodeMap<Vars> lattice) {
             std::stringstream str;
             for (size_t i = 0; i < instructions.size(); i++) {
                 auto inst = instructions[i];
