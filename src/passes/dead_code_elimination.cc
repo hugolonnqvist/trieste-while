@@ -220,8 +220,9 @@ namespace whilelang {
 			}
 		};
 		
-		dead_code_cleanup.post(Instructions, [&changes](Node n) {
-			if (n->empty()) {
+		dead_code_cleanup.post([&changes](Node n) {
+			auto program = n / Program;
+			if (program->empty()) {
 				// If no instructions left, don't run analysis again
 				changes = false;
 			}

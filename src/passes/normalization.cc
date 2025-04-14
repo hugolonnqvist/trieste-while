@@ -1,5 +1,4 @@
 #include "../internal.hh"
-#include "../utils.hh"
 
 namespace whilelang {
     using namespace trieste;
@@ -9,7 +8,7 @@ namespace whilelang {
 		PassDef normalization = {
             "normalization",
             normalization_wf,
-            dir::topdown, 
+            dir::topdown,
 			{
                 In(Program) * T(Stmt)[Stmt] >>
                     [](Match &_) -> Node
@@ -42,7 +41,6 @@ namespace whilelang {
                 T(Normalize) << (T(Assign) << (T(Ident)[Ident] * (T(AExpr) << T(Add, Sub, Mul)[Op]))) >>
                     [](Match &_) -> Node
                     {
-
 						Node op = _(Op);
 						auto curr = op->front();
 
@@ -82,7 +80,7 @@ namespace whilelang {
 								   << (Atom << id->clone());
                     },
 
-                T(Normalize) << (T(AExpr) << T(Int, Ident, Input)[Expr])>>
+                T(Normalize) << (T(AExpr) << T(Int, Ident, Input)[Expr]) >>
                     [](Match &_) -> Node
                     {
 						return Atom << _(Expr);
@@ -158,7 +156,21 @@ namespace whilelang {
                     },
            }
 		};
+        // clang-format on
 
+        normalization.post([](Node n) {
+			// Removes the instructions node
+			auto program = n / Program;
+            if (program->front() == Instructions) {
+                auto inst = program->front();
+                auto statement = inst->front();
+				
+                program->pop_back();
+                program->push_front(statement);
+            }
+
+            return 0;
+        });
         return normalization;
     }
 }

@@ -111,8 +111,7 @@ namespace whilelang {
 
 	inline const wf::Wellformed normalization_wf = 
 		statements_wf
-		| (Program <<= Instructions)
-		| (Instructions <<= Stmt++)
+		| (Program <<= ~Stmt)
 		| (AExpr <<= (Expr >>= (Atom | Add | Sub | Mul)))
 		| (Atom <<= (Expr >>= (Int | Ident | Input)))
 		| (Add <<= (Lhs >>= Atom) * (Rhs >>= Atom))
