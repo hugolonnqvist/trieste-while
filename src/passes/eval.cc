@@ -14,8 +14,10 @@ namespace whilelang {
             throw std::runtime_error("Not an atom: " + n->str());
 
         auto expr = n / Expr;
+
         if (expr == Int) return std::stoi(get_lexeme(expr));
-        else if (expr == Ident)
+
+        if (expr == Ident)
         {
             auto var = get_lexeme(expr);
 
@@ -24,17 +26,16 @@ namespace whilelang {
             else
                 throw std::runtime_error("Undefined variable: " + var);
         }
-        else if (expr == Input)
+
+        if (expr == Input)
         {
             std::cout << "input: ";
             int value;
             std::cin >> value;
             return value;
         }
-        else
-        {
-            throw std::runtime_error("Invalid atom: " + expr->str());
-        }
+
+        throw std::runtime_error("Invalid atom: " + expr->str());
     }
 
     int eval_aexpr(Node n, Bindings bindings)
@@ -56,24 +57,28 @@ namespace whilelang {
                              lhs * rhs;
     }
 
-    // TODO: Rewrite this function to match the above
     bool eval_bexpr(Node n, Bindings bindings)
     {
         if (n != BExpr)
             throw std::runtime_error("Not a boolean expression");
 
-        auto expr = n->front();
+        auto expr = n / Expr;
+
         if (expr == True) return true;
-        else if (expr == False) return false;
-        else if (expr == Not) return !eval_bexpr(expr / BExpr, bindings);
-        else if (expr == Equals || expr == LT)
+
+        if (expr == False) return false;
+
+        if (expr == Not) return !eval_bexpr(expr / BExpr, bindings);
+
+        if (expr->type().in({Equals, LT}))
         {
             auto lhs = eval_atom(expr / Lhs, bindings);
             auto rhs = eval_atom(expr / Rhs, bindings);
             return expr == Equals ? lhs == rhs
                                   : lhs < rhs;
         }
-        else if (expr == And || expr == Or)
+
+        if (expr->type().in({And, Or}))
         {
             bool result = expr == And;
             for (auto &e : *expr) {
@@ -81,9 +86,9 @@ namespace whilelang {
                 result = expr == And ? result && b : result || b;
             }
             return result;
-        } else {
-            throw std::runtime_error("Invalid boolean expression");
         }
+
+        throw std::runtime_error("Invalid boolean expression");
     }
 
     PassDef eval() {
