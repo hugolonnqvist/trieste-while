@@ -24,8 +24,6 @@ int main(int argc, char const *argv[]) {
         constant_analysis,
         "Compile and run constant analysis on the program.");
 
-    // trieste::logging::set_log_level_from_string("Debug");
-
     try {
         app.parse(argc, argv);
     } catch (const CLI::ParseError &e) {

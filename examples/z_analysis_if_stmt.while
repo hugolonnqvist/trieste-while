@@ -1,7 +1,11 @@
 a := 1;
-if true then {th := 1; th:=2; } else {th := 2; el := 0};
+th:=0;
+el:=0;
+
+if false then {th := 1; th:=2; } else {th := 2; el := 2};
+
 a := 3;
 a := 0;
-output el;
 output a;
 output th;
+output el;
