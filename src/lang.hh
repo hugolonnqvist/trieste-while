@@ -9,8 +9,7 @@ namespace whilelang {
     Rewriter optimization_analysis(bool &changes);
 
     // Program
-    inline const auto Program =
-        TokenDef("program");
+    inline const auto Program = TokenDef("program");
 
     // Statements
     inline const auto Assign = TokenDef(":=", flag::lookup);
@@ -57,7 +56,8 @@ namespace whilelang {
     inline const auto Paren = TokenDef("paren");
     inline const auto Brace = TokenDef("brace");
 
-    inline const auto Block = TokenDef("block", flag::symtab | flag::defbeforeuse);
+    inline const auto Block =
+        TokenDef("block", flag::symtab | flag::defbeforeuse);
 
     inline const auto Stmt = TokenDef("stmt");
     inline const auto Expr = TokenDef("expr");

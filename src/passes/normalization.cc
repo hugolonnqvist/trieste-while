@@ -15,8 +15,8 @@ namespace whilelang {
                 },
 
                 T(Normalize)
-                        << (T(Stmt) << T(
-                                Block, Assign, If, While, Output, Skip)[Stmt]) >>
+                        << (T(Stmt) << T(Block, Assign, If, While, Output, Skip)
+                                [Stmt]) >>
                     [](Match &_) -> Node {
                     return Stmt << (Normalize << _(Stmt));
                 },

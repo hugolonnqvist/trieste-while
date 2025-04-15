@@ -8,17 +8,16 @@ namespace whilelang {
         return std::string(n->location().view());
     }
 
-    int eval_atom(Node n, Bindings bindings)
-    {
+    int eval_atom(Node n, Bindings bindings) {
         if (n != Atom)
             throw std::runtime_error("Not an atom: " + n->str());
 
         auto expr = n / Expr;
 
-        if (expr == Int) return std::stoi(get_lexeme(expr));
+        if (expr == Int)
+            return std::stoi(get_lexeme(expr));
 
-        if (expr == Ident)
-        {
+        if (expr == Ident) {
             auto var = get_lexeme(expr);
 
             if (bindings->find(var) != bindings->end())
@@ -27,8 +26,7 @@ namespace whilelang {
                 throw std::runtime_error("Undefined variable: " + var);
         }
 
-        if (expr == Input)
-        {
+        if (expr == Input) {
             std::cout << "input: ";
             int value;
             std::cin >> value;
@@ -38,48 +36,47 @@ namespace whilelang {
         throw std::runtime_error("Invalid atom: " + expr->str());
     }
 
-    int eval_aexpr(Node n, Bindings bindings)
-    {
+    int eval_aexpr(Node n, Bindings bindings) {
         if (n != AExpr)
-            throw std::runtime_error("Not an arithmetic expression: " + n->str());
+            throw std::runtime_error(
+                "Not an arithmetic expression: " + n->str());
 
         auto expr = n / Expr;
-        if (expr == Atom) return eval_atom(expr, bindings);
+        if (expr == Atom)
+            return eval_atom(expr, bindings);
 
         if (!expr->type().in({Add, Sub, Mul}))
-            throw std::runtime_error("Invalid arithmetic expression: " + expr->str());
+            throw std::runtime_error(
+                "Invalid arithmetic expression: " + expr->str());
 
         auto lhs = eval_atom(expr / Lhs, bindings);
         auto rhs = eval_atom(expr / Rhs, bindings);
 
-        return expr == Add ? lhs + rhs :
-               expr == Sub ? lhs - rhs :
-                             lhs * rhs;
+        return expr == Add ? lhs + rhs : expr == Sub ? lhs - rhs : lhs * rhs;
     }
 
-    bool eval_bexpr(Node n, Bindings bindings)
-    {
+    bool eval_bexpr(Node n, Bindings bindings) {
         if (n != BExpr)
             throw std::runtime_error("Not a boolean expression");
 
         auto expr = n / Expr;
 
-        if (expr == True) return true;
+        if (expr == True)
+            return true;
 
-        if (expr == False) return false;
+        if (expr == False)
+            return false;
 
-        if (expr == Not) return !eval_bexpr(expr / BExpr, bindings);
+        if (expr == Not)
+            return !eval_bexpr(expr / BExpr, bindings);
 
-        if (expr->type().in({Equals, LT}))
-        {
+        if (expr->type().in({Equals, LT})) {
             auto lhs = eval_atom(expr / Lhs, bindings);
             auto rhs = eval_atom(expr / Rhs, bindings);
-            return expr == Equals ? lhs == rhs
-                                  : lhs < rhs;
+            return expr == Equals ? lhs == rhs : lhs < rhs;
         }
 
-        if (expr->type().in({And, Or}))
-        {
+        if (expr->type().in({And, Or})) {
             bool result = expr == And;
             for (auto &e : *expr) {
                 auto b = eval_bexpr(e, bindings);
@@ -98,41 +95,31 @@ namespace whilelang {
             "eval",
             eval_wf,
             dir::topdown,
-            {
-                T(Program) << T(Stmt)[Stmt] >>
-                  [](Match &_) -> Node
-                  {
-                      return Eval << _(Stmt);
-                  },
+            {T(Program) << T(Stmt)[Stmt] >>
+                 [](Match &_) -> Node { return Eval << _(Stmt); },
 
-                In(Eval) * T(Stmt) <<
-                  T(Block)[Block] >>
-                    [](Match &_) -> Node
-                    {
-                        return Seq << *_[Block];
-                    },
+             In(Eval) * T(Stmt) << T(Block)[Block] >>
+                 [](Match &_) -> Node { return Seq << *_[Block]; },
 
-                In(Eval) * T(Stmt) << T(Skip) >>
-                   [](Match &) -> Node { return {}; },
+             In(Eval) * T(Stmt) << T(Skip) >>
+                 [](Match &) -> Node { return {}; },
 
-                In(Eval) * T(Stmt)
+             In(Eval) * T(Stmt)
                      << (T(Assign) << (T(Ident)[Ident] * T(AExpr)[Rhs])) >>
                  [bindings](Match &_) -> Node {
-                   auto var = get_lexeme(_(Ident));
-                   auto rhs = _(Rhs);
-                   (*bindings)[var] = eval_aexpr(rhs, bindings);
-                   return {};
-                 },
+                 auto var = get_lexeme(_(Ident));
+                 auto rhs = _(Rhs);
+                 (*bindings)[var] = eval_aexpr(rhs, bindings);
+                 return {};
+             },
 
-                In(Eval) * T(Stmt) <<
-                  (T(Output) << T(Atom)[Expr]) >>
-                    [bindings](Match &_) -> Node
-                    {
-                        auto expr = _(Expr);
-                        int result = eval_atom(expr, bindings);
-                        std::cout << result << std::endl;
-                        return {};
-                    },
+             In(Eval) * T(Stmt) << (T(Output) << T(Atom)[Expr]) >>
+                 [bindings](Match &_) -> Node {
+                 auto expr = _(Expr);
+                 int result = eval_atom(expr, bindings);
+                 std::cout << result << std::endl;
+                 return {};
+             },
 
              In(Eval) * T(Stmt)
                      << (T(If)

@@ -10,9 +10,11 @@ int main(int argc, char const *argv[]) {
     app.add_option("input", input_path, "Path to the input file ")->required();
 
     std::string log_level;
-    app.add_option("-l,--log", log_level,
-                   "Set the log level (None, Error, Output, Warn, Info, Debug, Trace).")
-                   ->check(trieste::logging::set_log_level_from_string);
+    app.add_option(
+           "-l,--log",
+           log_level,
+           "Set the log level (None, Error, Output, Warn, Info, Debug, Trace).")
+        ->check(trieste::logging::set_log_level_from_string);
 
     bool run = false;
     bool constant_analysis = false;
@@ -53,7 +55,7 @@ int main(int argc, char const *argv[]) {
         }
         trieste::logging::Debug() << "AST after all passes: " << std::endl
                                   << result.ast;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
     }
 
