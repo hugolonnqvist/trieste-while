@@ -66,8 +66,7 @@ namespace whilelang {
         return new_defs;
     };
 
-    PassDef dead_code_elimination(
-        std::shared_ptr<ControlFlow> control_flow, bool &changes) {
+    PassDef dead_code_elimination(std::shared_ptr<ControlFlow> control_flow) {
         auto set_lattice = std::make_shared<SetLattice>();
 
         // Return bool value of bexpr if it can be calculated,
@@ -101,7 +100,7 @@ namespace whilelang {
                 T(Stmt)
                         << (T(Assign)[Assign]
                             << (T(Ident)[Ident] * T(AExpr)[AExpr])) >>
-                    [control_flow, set_lattice, &changes](Match &_) -> Node {
+                    [=](Match &_) -> Node {
                     control_flow->get_instructions();
                     auto id = get_identifier(_(Ident));
                     auto assign = _(Assign);
@@ -109,17 +108,15 @@ namespace whilelang {
                     if (set_lattice->out_set[assign].contains(id)) {
                         return NoChange;
                     } else {
-                        changes = true;
                         return {};
                     }
                 },
 
                 T(Stmt)[Stmt] << (T(Block)[Block] << End) >>
-                    [&changes](Match &_) -> Node {
+                    [](Match &_) -> Node {
                     if (_(Stmt)->parent()->in({If, While})) {
                         // Make sure if and while statements don't have their
                         // body removed
-                        changes = true;
                         return Stmt << (Block << (Stmt << Skip));
                     }
                     return {};
@@ -134,12 +131,11 @@ namespace whilelang {
                         << (T(If)
                             << (T(BExpr)[BExpr] * T(Stmt)[Then] *
                                 T(Stmt)[Else])) >>
-                    [get_bexpr_value, &changes](Match &_) -> Node {
+                    [=](Match &_) -> Node {
                     auto bexpr = _(BExpr);
                     auto bexpr_value = get_bexpr_value(bexpr);
 
                     if (bexpr_value.has_value()) {
-                        changes = true;
                         if (*bexpr_value) {
                             return Reapply << _(Then);
                         } else {
@@ -151,7 +147,7 @@ namespace whilelang {
                 },
 
                 T(Stmt) << (T(While) << (T(BExpr)[BExpr] * T(Stmt)[Do])) >>
-                    [get_bexpr_value, &changes](Match &_) -> Node {
+                    [=](Match &_) -> Node {
                     auto bexpr = _(BExpr);
                     auto bexpr_value = get_bexpr_value(bexpr);
 
@@ -159,7 +155,6 @@ namespace whilelang {
                         if (*bexpr_value) {
                             return NoChange;
                         } else {
-                            changes = true;
                             return {};
                         }
                     } else {
@@ -202,8 +197,8 @@ namespace whilelang {
         return dead_code_elimination;
     }
 
-    PassDef dead_code_cleanup(bool &changes) {
-        PassDef dead_code_cleanup = {
+    PassDef dead_code_cleanup() {
+        return {
             "dead_code_cleanup",
             normalization_wf,
             dir::topdown | dir::once,
@@ -211,16 +206,5 @@ namespace whilelang {
                 In(Block) * T(Stmt) << T(Block)[Block] >>
                     [](Match &_) -> Node { return Seq << *_(Block); },
             }};
-
-        dead_code_cleanup.post([&changes](Node n) {
-            auto program = n / Program;
-            if (program->empty()) {
-                // If no instructions left, don't run analysis again
-                changes = false;
-            }
-            return 0;
-        });
-
-        return dead_code_cleanup;
     }
 }

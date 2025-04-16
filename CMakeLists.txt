@@ -1,13 +1,17 @@
-# cmake_minimum_required(VERSION 3.14.0)
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.14.0)
+# cmake_minimum_required(VERSION 4.0)
 project(while VERSION 0.1.0 LANGUAGES CXX)
 
 include(FetchContent)
 
 FetchContent_Declare(
   trieste
-  GIT_REPOSITORY https://github.com/microsoft/Trieste
-  GIT_TAG 370ad85aa31f316f8ac39dcaaf6f4218901242e4
+  GIT_REPOSITORY https://github.com/hugolonnqvist/Trieste
+  GIT_BRANCH feature/conditional-pass 
+  GIT_TAG b69d61e3f062be67ba3380b86ecbf84e972fb3b8 
+  
+  # GIT_REPOSITORY https://github.com/microsoft/Trieste
+  # GIT_TAG 370ad85aa31f316f8ac39dcaaf6f4218901242e4
   )
 
 FetchContent_MakeAvailable(trieste)
@@ -45,10 +49,6 @@ src/passes/expressions.cc
 src/passes/statements.cc
 src/passes/check_refs.cc
 src/passes/normalization.cc
-# src/passes/eval.cc
-# src/passes/gather_control_flow.cc
-# src/passes/zero_analysis.cc
-# src/passes/constant_folding.cc
 )
 
 target_link_libraries(while

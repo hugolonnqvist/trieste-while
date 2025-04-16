@@ -17,6 +17,14 @@ namespace whilelang {
             successor.clear();
         }
 
+        bool is_dirty() {
+            return dirty;
+        };
+
+        void set_dirty(bool new_dirty) {
+            dirty = new_dirty;
+        };
+
         const NodeSet successors(Node node) {
             return successor[node];
         };
@@ -55,6 +63,7 @@ namespace whilelang {
         Vars vars;
         NodeMap<NodeSet> predecessor;
         NodeMap<NodeSet> successor;
+        bool dirty;
 
         void append_to_nodemap(NodeMap<NodeSet> &map, Node key, Node value);
         void append_to_nodemap(NodeMap<NodeSet> &map, Node key, NodeSet values);

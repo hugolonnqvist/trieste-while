@@ -17,12 +17,17 @@ int main(int argc, char const *argv[]) {
         ->check(trieste::logging::set_log_level_from_string);
 
     bool run = false;
-    bool constant_analysis = false;
+    bool run_static_analysis = false;
+    bool run_zero_analysis = false;
     app.add_flag("-r,--run", run, "Run the program (prompting inputs).");
     app.add_flag(
-        "-c,--constant-analysis",
-        constant_analysis,
-        "Compile and run constant analysis on the program.");
+        "-z,--zero-analysis",
+        run_zero_analysis,
+        "Enable zero analysis in the static analysis. ");
+    app.add_flag(
+        "-s,--static-analysis",
+        run_static_analysis,
+        "Compile and run static analysis on the program.");
 
     try {
         app.parse(argc, argv);
@@ -30,17 +35,21 @@ int main(int argc, char const *argv[]) {
         return app.exit(e);
     }
 
-    auto reader = whilelang::reader().file(input_path);
 
     try {
+		auto reader = whilelang::reader().file(input_path);
         auto result = reader.read();
+		auto program_empty = [] (trieste::Node ast) -> bool {
+			return ast->front()->empty();
+		};
 
-        bool changes;
-        do {
-            changes = false;
-            if (constant_analysis)
-                result = result >> whilelang::optimization_analysis(changes);
-        } while (changes);
+        if (run_static_analysis) {
+            do {
+                result = result >>
+                    whilelang::optimization_analysis(run_zero_analysis);
+            } while (result.ok && result.total_changes > 0 && !program_empty(result.ast));
+        }
+
         if (run)
             result = result >> whilelang::interpret();
 

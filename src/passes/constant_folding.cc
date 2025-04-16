@@ -147,12 +147,23 @@ namespace whilelang {
             return Atom << create_const_node(value);
         };
 
+        auto atom_is_const = [=](Node inst, Node atom) -> bool {
+            if ((atom / Expr) == Ident) {
+                auto lattice_value = analysis->get_lattice_value(
+                    inst, get_identifier(atom / Expr));
+
+                return lattice_value.type == CPAbstractType::Constant;
+            }
+            return false;
+        };
+
         auto try_atom_to_const = [=](Node inst, Node atom) -> Node {
             if ((atom / Expr) == Ident) {
                 auto lattice_value = analysis->get_lattice_value(
                     inst, get_identifier(atom / Expr));
 
                 if (lattice_value.type == CPAbstractType::Constant) {
+                    control_flow->set_dirty(true);
                     return ident_to_const(*lattice_value.value);
                 }
             }
@@ -175,11 +186,16 @@ namespace whilelang {
                         inst, get_identifier(ident));
 
                     if (lattice_value.type == CPAbstractType::Constant) {
+                        control_flow->set_dirty(true);
                         return Assign
                             << ident
                             << (AExpr << ident_to_const(*lattice_value.value));
                     } else {
                         auto op = _(Op);
+                        if (!atom_is_const(inst, op / Lhs) &&
+                            !atom_is_const(inst, op / Rhs)) {
+                            return NoChange;
+                        }
                         return Assign
                             << ident
                             << (AExpr
@@ -193,6 +209,9 @@ namespace whilelang {
                     [=](Match &_) -> Node {
                     auto inst = _(Output);
 
+                    if (!atom_is_const(inst, _(Atom))) {
+                        return NoChange;
+                    }
                     return Output << try_atom_to_const(inst, _(Atom));
                 },
 
@@ -201,6 +220,13 @@ namespace whilelang {
                             << (T(Atom)[Lhs] * T(Atom)[Rhs])) >>
                     [=](Match &_) -> Node {
                     auto inst = _(BExpr);
+                    auto lhs = try_atom_to_const(inst, _(Lhs));
+                    auto rhs = try_atom_to_const(inst, _(Rhs));
+
+                    if (!atom_is_const(inst, _(Lhs)) &&
+                        !atom_is_const(inst, _(Rhs))) {
+                        return NoChange;
+                    }
 
                     return BExpr
                         << (_(Op)->type() << try_atom_to_const(inst, _(Lhs))
@@ -219,11 +245,6 @@ namespace whilelang {
             control_flow->log_instructions();
             analysis->log_state_table(control_flow->get_instructions());
 
-            return 0;
-        });
-
-        constant_folding.post([=](Node) {
-            control_flow->clear();
             return 0;
         });
 

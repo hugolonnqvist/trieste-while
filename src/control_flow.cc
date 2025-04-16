@@ -11,6 +11,7 @@ namespace whilelang {
         this->vars = Vars();
         this->predecessor = NodeMap<NodeSet>();
         this->successor = NodeMap<NodeSet>();
+        this->dirty = false;
     }
 
     void ControlFlow::add_var(Node ident) {

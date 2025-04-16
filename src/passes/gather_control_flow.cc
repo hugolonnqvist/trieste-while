@@ -30,7 +30,14 @@ namespace whilelang {
                 },
             }};
 
-        gather_instructions.post([control_flow](Node) {
+        gather_instructions.pre([=](Node) {
+            if (control_flow->is_dirty())
+                control_flow->clear();
+
+            return 0;
+        });
+
+        gather_instructions.post([=](Node) {
             if (control_flow->get_instructions().empty()) {
                 throw std::runtime_error("Unexpected, missing instructions");
             }
@@ -99,6 +106,11 @@ namespace whilelang {
                     return NoChange;
                 },
             }};
+
+		gather_flow_graph.post([=](Node) {
+			control_flow->set_dirty(false);
+			return 0;
+		});
         return gather_flow_graph;
     }
 }
