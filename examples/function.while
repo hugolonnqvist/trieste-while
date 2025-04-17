@@ -1,0 +1,2 @@
+fun add(x, y) { res := x + y; return res; }
+fun sub(x, y) { return x-y; }

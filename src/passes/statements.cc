@@ -4,19 +4,11 @@ namespace whilelang {
     using namespace trieste;
 
     PassDef statements() {
-        return {
+        PassDef pass = {
             "statements",
             statements_wf,
             dir::bottomup | dir::once,
             {
-                // Make sure there is always one block stmt
-                T(Program) << (T(Stmt)[Stmt] << !T(Block)) >> [](Match &_)
-                    -> Node { return Program << (Stmt << (Block << _(Stmt))); },
-
-                T(File) << (T(Stmt)[Stmt] * End) >> [](Match &_) -> Node {
-                    return Reapply << (Program << _(Stmt));
-                },
-
                 T(Skip)[Skip] >>
                     [](Match &_) -> Node { return Stmt << _(Skip); },
 
@@ -45,8 +37,22 @@ namespace whilelang {
                     return Stmt << (While << _(BExpr) << do_);
                 },
 
-                (T(Output) << T(AExpr)[AExpr]) >> [](Match &_) -> Node {
+                T(Output) << T(AExpr)[AExpr] >> [](Match &_) -> Node {
                     return Stmt << (Output << _(AExpr));
+                },
+
+                T(FunDec)
+                        << (T(FunId)[FunId] * T(ParamList)[ParamList] *
+                            (T(Body) << T(Stmt)[Body])) >>
+                    [](Match &_) -> Node {
+                    auto body = _(Body)->front() == Block ?
+                        _(Body) :
+                        Stmt << (Block << _(Body));
+                    return FunDec << _(FunId) << _(ParamList) << body;
+                },
+
+                T(Return) << T(AExpr)[AExpr] >> [](Match &_) -> Node {
+                    return Stmt << (Return << _(AExpr));
                 },
 
                 T(Semi)[Semi] << T(Stmt) >> [](Match &_) -> Node {
@@ -143,6 +149,12 @@ namespace whilelang {
                                  << (ErrorMsg ^ "Expected expression");
                 },
 
+                In(Return) * Start * (!T(AExpr))[AExpr] >>
+                    [](Match &_) -> Node {
+                    return Error << (ErrorAst << _(AExpr))
+                                 << (ErrorMsg ^ "Expected expression");
+                },
+
                 In(Semi)[Semi] * (!T(Stmt))[Expr] >> [](Match &_) -> Node {
                     return Error << (ErrorAst << _(Expr))
                                  << (ErrorMsg ^ "Expected statement");
@@ -159,5 +171,17 @@ namespace whilelang {
                 },
 
             }};
+
+        pass.pre([](Node n) {
+            std::cout << "Pre statement pass:\n" << n;
+            return 0;
+        });
+
+        pass.post([](Node n) {
+            std::cout << "Post statement pass:\n" << n;
+            return 0;
+        });
+
+        return pass;
     }
 }

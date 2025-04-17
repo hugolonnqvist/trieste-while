@@ -58,13 +58,26 @@ namespace whilelang {
                 m.push(following);
             };
 
+        auto add_fun = [](Make &m) {
+            if (m.in(Group)) {
+				m.pop(Group);
+            }
+            m.add(FunDec);
+        };
+
         p("start",
           {
               // whitespace
               "[[:space:]]+" >> [](auto &) {}, // no-op
 
+              "," >> [](auto &) {}, // no-op
+
               // Line comment.
               "//[^\n]*" >> [](auto &) {}, // no-op
+
+              // Functions
+              "fun\\b" >> [add_fun](auto &m) { add_fun(m); },
+              "return\\b" >> [](auto &m) { m.push(Return); },
 
               // Statements
               ":=" >> [infix](auto &m) { infix(m, Assign); },
@@ -75,18 +88,22 @@ namespace whilelang {
                   [](auto &m) {
                       m.seq(
                           Semi,
-                          {Add,
-                           Sub,
-                           Mul,
-                           Equals,
-                           LT,
-                           And,
-                           Or,
-                           Assign,
-                           Else,
-                           Do,
-                           Output,
-                           Group});
+                          {
+                              Add,
+                              Sub,
+                              Mul,
+                              Equals,
+                              LT,
+                              And,
+                              Or,
+                              Assign,
+                              Else,
+                              Do,
+                              Output,
+                              Return,
+                              Group,
+                              FunDec,
+                          });
                   },
 
               "if\\b" >> [](auto &m) { m.push(If); },
@@ -143,6 +160,7 @@ namespace whilelang {
         p.done([pop_until](auto &m) {
             pop_until(m, File, {Paren, If, Then, While});
         });
+
         return p;
     }
 }

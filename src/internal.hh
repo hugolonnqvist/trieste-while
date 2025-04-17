@@ -8,6 +8,7 @@ namespace whilelang {
     using namespace trieste;
 
     Parse parser();
+    PassDef functions();
     PassDef expressions();
     PassDef statements();
     PassDef check_refs();
@@ -27,6 +28,7 @@ namespace whilelang {
 		Skip |
 		If | Then | Else |
 		While | Do |
+		FunDec | Return |
 		Output |
 		Int | Ident | Input |
 		True | False | Not |
@@ -43,32 +45,45 @@ namespace whilelang {
 
 	inline const wf::Wellformed parse_wf =
 		(Top <<= File)
-		| (File   <<= ~grouping_construct)
-		| (Semi   <<= (grouping_construct - Semi)++[1])
-		| (If     <<= ~grouping_construct)
-		| (Then   <<= ~grouping_construct)
-		| (Else   <<= ~grouping_construct)
-		| (While  <<= ~grouping_construct)
-		| (Do     <<= ~grouping_construct)
-		| (Output <<= ~grouping_construct)
-		| (Assign <<= (grouping_construct - Assign)++[1])
-		| (Add    <<= (grouping_construct - Add)++[1])
-		| (Sub    <<= (grouping_construct - Sub)++[1])
-		| (Mul    <<= (grouping_construct - Mul - Add - Sub)++[1])
-		| (LT     <<= (grouping_construct - LT)++[1])
-		| (Equals <<= (grouping_construct - Equals)++[1])
-		| (And    <<= (grouping_construct - And - Or)++[1])
-		| (Or     <<= (grouping_construct - Or)++[1])
-		| (Paren  <<= ~grouping_construct)
-		| (Brace  <<= ~grouping_construct)
-		| (Group  <<= parse_token++)
+		| (File		<<= grouping_construct++)
+		| (FunDec	<<= ~grouping_construct)
+		| (Return	<<= ~grouping_construct)
+		| (Semi		<<= (grouping_construct - Semi)++[1])
+		| (If		<<= ~grouping_construct)
+		| (Then		<<= ~grouping_construct)
+		| (Else		<<= ~grouping_construct)
+		| (While	<<= ~grouping_construct)
+		| (Do		<<= ~grouping_construct)
+		| (Output	<<= ~grouping_construct)
+		| (Assign	<<= (grouping_construct - Assign)++[1])
+		| (Add		<<= (grouping_construct - Add)++[1])
+		| (Sub		<<= (grouping_construct - Sub)++[1])
+		| (Mul		<<= (grouping_construct - Mul - Add - Sub)++[1])
+		| (LT		<<= (grouping_construct - LT)++[1])
+		| (Equals	<<= (grouping_construct - Equals)++[1])
+		| (And		<<= (grouping_construct - And - Or)++[1])
+		| (Or		<<= (grouping_construct - Or)++[1])
+		| (Paren	<<= ~grouping_construct)
+		| (Brace	<<= ~grouping_construct)
+		| (Group	<<= parse_token++)
+		;
+
+	inline const wf::Wellformed functions_wf = 
+		parse_wf
+		| (Top <<= Program)
+		| (Program <<= FunDec++[1])
+		| (FunDec <<= FunId * ParamList * Body)
+		| (FunId <<= Ident)
+		| (ParamList <<= Param++)
+		| (Param <<= Ident)
+		| (Body <<= ~grouping_construct)
 		;
 
 	inline const auto expressions_parse_token = parse_token - Not - True - False - Int - Ident - Input;
 	inline const auto expressions_grouping_construct = (grouping_construct - Add - Sub - Mul - LT - Equals - And - Or) | AExpr | BExpr;
 
 	inline const wf::Wellformed expressions_wf =
-		parse_wf
+		functions_wf
 		| (File   <<= ~expressions_grouping_construct)
 		| (AExpr  <<= (Expr >>= (Int | Ident | Mul | Add | Sub | Input)))
 		| (BExpr  <<= (Expr >>= (True | False | Not | Equals | LT | And | Or)))
@@ -87,6 +102,7 @@ namespace whilelang {
 		| (While  <<= ~expressions_grouping_construct)
 		| (Do     <<= ~expressions_grouping_construct)
 		| (Output <<= ~expressions_grouping_construct)
+		| (Return <<= ~expressions_grouping_construct)
 		| (Assign <<= (expressions_grouping_construct - Assign)++[1])
 		| (Paren  <<= expressions_grouping_construct)
 		| (Brace  <<= ~expressions_grouping_construct)
@@ -94,15 +110,15 @@ namespace whilelang {
 		;
 
     inline const wf::Wellformed statements_wf =
-		(expressions_wf - Group - Paren - Do - Then - Else)
-		| (Top <<= Program)
-		| (Program <<= Stmt)
-		| (Stmt <<= (Stmt >>= (Skip | Assign | While | If | Output | Block)))
+		(expressions_wf - Group - Paren - Do - Then - Else - Body)
+		| (FunDec <<= FunId * ParamList * (Body >>= Stmt))
+		| (Stmt <<= (Stmt >>= (Skip | Assign | While | If | Output | Block | Return)))
 		| (If <<= BExpr * (Then >>= Stmt) * (Else >>= Stmt))
 		| (While <<= BExpr * (Do >>= Stmt))
 		| (Assign <<= Ident * (Rhs >>= AExpr))[Ident]
 		| (Output <<= AExpr)
 		| (Block <<= Stmt++[1])
+		| (Return <<= AExpr)
 		;
 
 	inline const wf::Wellformed eval_wf =

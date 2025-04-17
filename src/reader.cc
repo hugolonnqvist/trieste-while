@@ -10,14 +10,15 @@ namespace whilelang {
             "while",
             {
                 // Parsing
+				functions(),
                 expressions(),
                 statements(),
 
                 // Checking
-                check_refs(),
+                // check_refs(),
 
                 // Normalization
-                normalization(),
+                // normalization(),
             },
             whilelang::parser(),
         };
