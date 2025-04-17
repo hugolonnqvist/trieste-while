@@ -11,8 +11,22 @@ namespace whilelang {
     // Program
     inline const auto Program = TokenDef("program");
 
+    // Function
+    inline const auto FunDef = TokenDef("function_declaration", flag::symtab | flag::defbeforeuse);
+    inline const auto FunId = TokenDef("function_identifier");
+	inline const auto ParamList = TokenDef("param_list");
+	inline const auto Param = TokenDef("param", flag::lookup | flag::shadowing);
+	inline const auto Body = TokenDef("body");
+    inline const auto Var = TokenDef("var", flag::lookup | flag::shadowing);
+    inline const auto Return = TokenDef("return");
+
+    inline const auto FunCall = TokenDef("function_call");
+    inline const auto ArgList = TokenDef("arg_list");
+    inline const auto Arg = TokenDef("arg");
+    inline const auto Comma = TokenDef("comma");
+
     // Statements
-    inline const auto Assign = TokenDef(":=", flag::lookup);
+    inline const auto Assign = TokenDef(":=");
 
     inline const auto Skip = TokenDef("skip");
 

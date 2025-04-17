@@ -10,6 +10,7 @@ namespace whilelang {
             "while",
             {
                 // Parsing
+				functions(),
                 expressions(),
                 statements(),
 

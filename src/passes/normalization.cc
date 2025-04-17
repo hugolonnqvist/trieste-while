@@ -9,14 +9,24 @@ namespace whilelang {
             normalization_wf,
             dir::topdown,
             {
-                In(Program) * T(Stmt)[Stmt] >> [](Match &_) -> Node {
-                    auto stmt = _(Stmt);
-                    return Instructions << (Normalize << stmt);
+                T(Program)[Program] << T(FunDef) >> [](Match &_) -> Node {
+                    Node res = Instructions;
+                    for (auto child : *_(Program)) {
+                        res << (Normalize << child);
+                    }
+                    return Program << res;
+                },
+
+                T(Normalize) << T(FunDef)[FunDef] >> [](Match &_) -> Node {
+                    return FunDef << (_(FunDef) / FunId)
+                                  << (_(FunDef) / ParamList)
+                                  << (Normalize << (_(FunDef) / Body));
                 },
 
                 T(Normalize)
-                        << (T(Stmt) << T(Block, Assign, If, While, Output, Skip)
-                                [Stmt]) >>
+                        << (T(Stmt)
+                            << T(Block, Assign, If, While, Output, Skip, Return)
+                                   [Stmt]) >>
                     [](Match &_) -> Node {
                     return Stmt << (Normalize << _(Stmt));
                 },
@@ -28,6 +38,9 @@ namespace whilelang {
                     }
                     return res;
                 },
+
+                T(Normalize) << T(Var)[Var] >>
+                    [](Match &_) -> Node { return _(Var); },
 
                 T(Normalize)
                         << (T(Assign)
@@ -54,11 +67,32 @@ namespace whilelang {
                 T(Normalize)
                         << (T(Assign)
                             << (T(Ident)[Ident] *
-                                (T(AExpr)[AExpr] << T(Int, Ident, Input)))) >>
+                                (T(AExpr)[AExpr]
+                                 << T(Int, Ident, Input, FunCall)))) >>
                     [](Match &_) -> Node {
                     return Assign << _(Ident)
                                   << (AExpr << (Normalize << _(AExpr)));
                 },
+
+                T(Normalize) << (T(AExpr) << T(FunCall)[FunCall]) >>
+                    [](Match &_) -> Node {
+                    auto id = Ident ^ _(FunCall)->fresh();
+                    auto fun_id = _(FunCall) / FunId;
+                    Node args = ArgList;
+
+                    for (auto child : *(_(FunCall) / ArgList)) {
+                        args << (Normalize << child);
+                    }
+
+                    auto assign = Assign
+                        << id << (AExpr << (FunCall << fun_id << args));
+
+                    return Seq << (Lift << Block << (Stmt << assign))
+                               << (Atom << id->clone());
+                },
+
+                T(Normalize) << (T(Arg) << T(AExpr)[AExpr]) >> [](Match &_)
+                    -> Node { return Arg << (Normalize << _(AExpr)); },
 
                 T(Normalize) << (T(AExpr)[AExpr] << T(Add, Sub, Mul)[Op]) >>
                     [](Match &_) -> Node {
@@ -97,6 +131,9 @@ namespace whilelang {
 
                 T(Normalize) << (T(Output) << T(AExpr)[AExpr]) >> [](Match &_)
                     -> Node { return Output << (Normalize << _(AExpr)); },
+
+                T(Normalize) << (T(Return) << T(AExpr)[AExpr]) >> [](Match &_)
+                    -> Node { return Return << (Normalize << _(AExpr)); },
 
                 T(Normalize) << T(If)[If] >> [](Match &_) -> Node {
                     auto bexpr = _(If) / BExpr;
@@ -141,17 +178,22 @@ namespace whilelang {
                     [](Match &_) -> Node { return _(BExpr); },
             }};
 
+        normalization.pre([](Node n) {
+            logging::Debug() << n;
+            return 0;
+        });
+
         normalization.post([](Node n) {
             // Removes the instructions node
-            auto program = n / Program;
+            Node program = n / Program;
             if (program->front() == Instructions) {
-                auto inst = program->front();
-                auto statement = inst->front();
+                Node inst = program->front();
 
                 program->pop_back();
-                program->push_front(statement);
+                program->push_back(*inst);
             }
 
+            logging::Debug() << n;
             return 0;
         });
 

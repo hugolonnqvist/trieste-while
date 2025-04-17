@@ -7,7 +7,7 @@ include(FetchContent)
 FetchContent_Declare(
   trieste
   GIT_REPOSITORY https://github.com/microsoft/Trieste
-  GIT_TAG 370ad85aa31f316f8ac39dcaaf6f4218901242e4
+  GIT_TAG 30986102c54c356346ab6cb1e2d17f43272e0888
   )
 
 FetchContent_MakeAvailable(trieste)
@@ -22,6 +22,7 @@ src/optimization_analysis.cc
 src/utils.cc
 src/control_flow.cc
 
+src/passes/functions.cc
 src/passes/expressions.cc
 src/passes/statements.cc
 src/passes/check_refs.cc
@@ -41,6 +42,7 @@ src/reader.cc
 src/utils.cc
 src/control_flow.cc
 
+src/passes/functions.cc
 src/passes/expressions.cc
 src/passes/statements.cc
 src/passes/check_refs.cc

@@ -58,13 +58,47 @@ namespace whilelang {
                 m.push(following);
             };
 
+        auto add_fun = [](Make &m) {
+            if (m.in(Group)) {
+                m.pop(Group);
+            }
+            m.add(FunDef);
+        };
+
         p("start",
           {
               // whitespace
               "[[:space:]]+" >> [](auto &) {}, // no-op
 
+              "," >>
+                  [](auto &m) {
+                      m.seq(
+                          Comma,
+                          {
+                              Add,
+                              Sub,
+                              Mul,
+                              Equals,
+                              LT,
+                              And,
+                              Or,
+                              Assign,
+                              Else,
+                              Do,
+                              Output,
+                              Return,
+                              Group,
+                              FunDef,
+                          });
+                  },
+
               // Line comment.
               "//[^\n]*" >> [](auto &) {}, // no-op
+
+              // Functions
+              "fun\\b" >> [add_fun](auto &m) { add_fun(m); },
+              "var\\b" >> [](auto &m) { m.push(Var); },
+              "return\\b" >> [](auto &m) { m.push(Return); },
 
               // Statements
               ":=" >> [infix](auto &m) { infix(m, Assign); },
@@ -75,18 +109,24 @@ namespace whilelang {
                   [](auto &m) {
                       m.seq(
                           Semi,
-                          {Add,
-                           Sub,
-                           Mul,
-                           Equals,
-                           LT,
-                           And,
-                           Or,
-                           Assign,
-                           Else,
-                           Do,
-                           Output,
-                           Group});
+                          {
+                              Add,
+                              Sub,
+                              Mul,
+                              Equals,
+                              LT,
+                              And,
+                              Or,
+                              Assign,
+                              Else,
+                              Do,
+                              Output,
+                              Return,
+                              Group,
+                              FunDef,
+							  Var,
+							  Comma,
+                          });
                   },
 
               "if\\b" >> [](auto &m) { m.push(If); },
@@ -143,6 +183,7 @@ namespace whilelang {
         p.done([pop_until](auto &m) {
             pop_until(m, File, {Paren, If, Then, While});
         });
+
         return p;
     }
 }

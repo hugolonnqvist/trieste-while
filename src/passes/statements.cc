@@ -4,19 +4,11 @@ namespace whilelang {
     using namespace trieste;
 
     PassDef statements() {
-        return {
+        PassDef pass = {
             "statements",
             statements_wf,
             dir::bottomup | dir::once,
             {
-                // Make sure there is always one block stmt
-                T(Program) << (T(Stmt)[Stmt] << !T(Block)) >> [](Match &_)
-                    -> Node { return Program << (Stmt << (Block << _(Stmt))); },
-
-                T(File) << (T(Stmt)[Stmt] * End) >> [](Match &_) -> Node {
-                    return Reapply << (Program << _(Stmt));
-                },
-
                 T(Skip)[Skip] >>
                     [](Match &_) -> Node { return Stmt << _(Skip); },
 
@@ -45,8 +37,25 @@ namespace whilelang {
                     return Stmt << (While << _(BExpr) << do_);
                 },
 
-                (T(Output) << T(AExpr)[AExpr]) >> [](Match &_) -> Node {
+                T(Output) << T(AExpr)[AExpr] >> [](Match &_) -> Node {
                     return Stmt << (Output << _(AExpr));
+                },
+
+                T(FunDef)
+                        << (T(FunId)[FunId] * T(ParamList)[ParamList] *
+                            (T(Body) << T(Stmt)[Body])) >>
+                    [](Match &_) -> Node {
+                    auto body = _(Body)->front() == Block ?
+                        _(Body) :
+                        Stmt << (Block << _(Body));
+                    return FunDef << _(FunId) << _(ParamList) << body;
+                },
+
+                T(Var)[Var] << T(Ident) >>
+                    [](Match &_) -> Node { return Stmt << _(Var); },
+
+                T(Return)[Return] << T(AExpr) >> [](Match &_) -> Node {
+                    return Stmt << _(Return);
                 },
 
                 T(Semi)[Semi] << T(Stmt) >> [](Match &_) -> Node {
@@ -143,6 +152,39 @@ namespace whilelang {
                                  << (ErrorMsg ^ "Expected expression");
                 },
 
+                T(Body)[Body] << (Start * End) >> [](Match &_) -> Node {
+                    return Error
+                        << (ErrorAst << _(Body))
+                        << (ErrorMsg ^ "Expected non empty function body");
+                },
+
+                T(Body)[Body] << !T(Stmt) >> [](Match &_) -> Node {
+                    return Error
+                        << (ErrorAst << _(Body))
+                        << (ErrorMsg ^
+                            "Expected the function body to be a statement");
+                },
+
+                T(ArgList)[ArgList] << !T(Arg) >> [](Match &_) -> Node {
+                    return Error << (ErrorAst << _(ArgList))
+                                 << (ErrorMsg ^
+                                     "Expected the function arguments to be "
+                                     "arguments");
+                },
+
+                T(Arg)[Arg] << !T(AExpr) >> [](Match &_) -> Node {
+                    return Error << (ErrorAst << _(ArgList))
+                                 << (ErrorMsg ^
+                                     "Expected the function arguments to be "
+                                     "arithmetic expressions");
+                },
+
+                In(Return) * Start * (!T(AExpr))[AExpr] >>
+                    [](Match &_) -> Node {
+                    return Error << (ErrorAst << _(AExpr))
+                                 << (ErrorMsg ^ "Expected expression");
+                },
+
                 In(Semi)[Semi] * (!T(Stmt))[Expr] >> [](Match &_) -> Node {
                     return Error << (ErrorAst << _(Expr))
                                  << (ErrorMsg ^ "Expected statement");
@@ -159,5 +201,11 @@ namespace whilelang {
                 },
 
             }};
+		pass.post([](Node n) {
+		logging::Debug() << "Post stmt: \n" << n;
+			return 0;
+		});
+
+		return pass;
     }
 }

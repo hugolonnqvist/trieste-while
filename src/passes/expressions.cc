@@ -4,8 +4,8 @@ namespace whilelang {
     using namespace trieste;
 
     PassDef expressions() {
-        auto UNHANDLED = --In(BExpr, AExpr);
-        return {
+        auto UNHANDLED = --In(BExpr, AExpr, Param, FunId, Var);
+        PassDef pass = {
             "expressions",
             expressions_wf,
             dir::bottomup,
@@ -13,7 +13,7 @@ namespace whilelang {
                 UNHANDLED * T(True, False)[Expr] >>
                     [](Match &_) -> Node { return BExpr << _(Expr); },
 
-                UNHANDLED *T(Ident, Int, Input)[Expr] >>
+                UNHANDLED *T(Ident, Int, Input, FunCall)[Expr] >>
                     [](Match &_) -> Node { return AExpr << _(Expr); },
 
                 UNHANDLED *(T(Not) << End) * T(BExpr)[BExpr] >>
@@ -98,5 +98,11 @@ namespace whilelang {
                                  << (ErrorMsg ^ "Invalid operand");
                 },
             }};
+
+        pass.post([](Node n) {
+            logging::Debug() << "Post expr: \n" << n;
+            return 0;
+        });
+        return pass;
     }
 }
