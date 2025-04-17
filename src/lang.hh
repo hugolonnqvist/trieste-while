@@ -12,7 +12,7 @@ namespace whilelang {
     inline const auto Program = TokenDef("program");
 
     // Function
-    inline const auto FunDec = TokenDef("function_declaration");
+    inline const auto FunDef = TokenDef("function_declaration");
     inline const auto FunId = TokenDef("function_identifier");
 	inline const auto ParamList = TokenDef("param_list");
 	inline const auto Param = TokenDef("param");

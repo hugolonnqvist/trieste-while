@@ -62,7 +62,7 @@ namespace whilelang {
             if (m.in(Group)) {
 				m.pop(Group);
             }
-            m.add(FunDec);
+            m.add(FunDef);
         };
 
         p("start",
@@ -102,7 +102,7 @@ namespace whilelang {
                               Output,
                               Return,
                               Group,
-                              FunDec,
+                              FunDef,
                           });
                   },
 

@@ -41,14 +41,14 @@ namespace whilelang {
                     return Stmt << (Output << _(AExpr));
                 },
 
-                T(FunDec)
+                T(FunDef)
                         << (T(FunId)[FunId] * T(ParamList)[ParamList] *
                             (T(Body) << T(Stmt)[Body])) >>
                     [](Match &_) -> Node {
                     auto body = _(Body)->front() == Block ?
                         _(Body) :
                         Stmt << (Block << _(Body));
-                    return FunDec << _(FunId) << _(ParamList) << body;
+                    return FunDef << _(FunId) << _(ParamList) << body;
                 },
 
                 T(Return) << T(AExpr)[AExpr] >> [](Match &_) -> Node {
@@ -147,6 +147,19 @@ namespace whilelang {
                     [](Match &_) -> Node {
                     return Error << (ErrorAst << _(AExpr))
                                  << (ErrorMsg ^ "Expected expression");
+                },
+
+                T(Body)[Body] << (Start * End) >> [](Match &_) -> Node {
+                    return Error
+                        << (ErrorAst << _(Body))
+                        << (ErrorMsg ^ "Expected non empty function body");
+                },
+
+                T(Body)[Body] << !T(Stmt) >> [](Match &_) -> Node {
+                    return Error
+                        << (ErrorAst << _(Body))
+                        << (ErrorMsg ^
+                            "Expected the function body to be a statement");
                 },
 
                 In(Return) * Start * (!T(AExpr))[AExpr] >>

@@ -7,32 +7,48 @@ namespace whilelang {
         PassDef functions = {
             "functions",
             functions_wf,
-            dir::topdown | dir::once,
+            dir::topdown,
             {
-                In(Top) * T(File)[File] >> [](Match &_) -> Node {
-                    return Reapply << (Program << *_(File));
-                },
+                In(Top) * (T(File)[File] << (T(FunDef) * T(FunDef)++)) >>
+                    [](Match &_) -> Node { return Program << *_(File); },
 
-                T(Program) << T(Semi)[Semi] >> [](Match &_) -> Node {
-                    return Reapply << (Program << *_(Semi));
-                },
+                T(File) << T(Semi)[Semi] >>
+                    [](Match &_) -> Node { return File << *_(Semi); },
+
+                T(Semi)[Semi] << (T(FunDef) * T(FunDef)++) >>
+                    [](Match &_) -> Node { return Seq << *_(Semi); },
 
                 T(Group)
-                        << (T(FunDec) * T(Ident)[Ident] *
-                            (T(Paren) << T(Group)[Group]) * T(Brace)[Brace]) >>
+                        << (T(FunDef) * T(Ident)[Ident] * T(Paren)[Paren] *
+                            T(Brace)[Brace]) >>
                     [](Match &_) -> Node {
-                    return FunDec << (FunId << _(Ident))
-                                  << (ParamList << *_(Group))
+                    return FunDef << (FunId << _(Ident))
+                                  << (ParamList << *_(Paren))
                                   << (Body << *_(Brace));
                 },
 
-                T(ParamList)[ParamList] >> [](Match &_) -> Node {
+                T(ParamList) << (Start * End) >>
+                    [](Match &) -> Node { return NoChange; },
+
+                T(ParamList) << T(Group)[Group] >> [](Match &_) -> Node {
                     Node params = ParamList;
-                    for (auto ident : *_(ParamList)) {
+                    for (auto ident : *_(Group)) {
                         params << (Param << ident);
                     }
 
                     return params;
+                },
+
+                T(FunDef)[FunDef] << --(T(FunId) * T(ParamList) * T(Body)) >>
+                    [](Match &_) -> Node {
+                    return Error << (ErrorAst << _(FunDef))
+                                 << (ErrorMsg ^ "Invalid function declaration");
+                },
+
+                T(Program)[Program] << !T(FunDef) >> [](Match &) -> Node {
+                    return Error
+                        << (ErrorAst << Program)
+                        << (ErrorMsg ^ "Invalid program, missing a function");
                 },
 
             }};

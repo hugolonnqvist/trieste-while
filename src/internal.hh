@@ -28,7 +28,7 @@ namespace whilelang {
 		Skip |
 		If | Then | Else |
 		While | Do |
-		FunDec | Return |
+		FunDef | Return |
 		Output |
 		Int | Ident | Input |
 		True | False | Not |
@@ -46,7 +46,7 @@ namespace whilelang {
 	inline const wf::Wellformed parse_wf =
 		(Top <<= File)
 		| (File		<<= grouping_construct++)
-		| (FunDec	<<= ~grouping_construct)
+		| (FunDef	<<= ~grouping_construct)
 		| (Return	<<= ~grouping_construct)
 		| (Semi		<<= (grouping_construct - Semi)++[1])
 		| (If		<<= ~grouping_construct)
@@ -71,8 +71,8 @@ namespace whilelang {
 	inline const wf::Wellformed functions_wf = 
 		parse_wf
 		| (Top <<= Program)
-		| (Program <<= FunDec++[1])
-		| (FunDec <<= FunId * ParamList * Body)
+		| (Program <<= FunDef++[1])
+		| (FunDef <<= FunId * ParamList * Body)
 		| (FunId <<= Ident)
 		| (ParamList <<= Param++)
 		| (Param <<= Ident)
@@ -87,6 +87,7 @@ namespace whilelang {
 		| (File   <<= ~expressions_grouping_construct)
 		| (AExpr  <<= (Expr >>= (Int | Ident | Mul | Add | Sub | Input)))
 		| (BExpr  <<= (Expr >>= (True | False | Not | Equals | LT | And | Or)))
+		| (Body	  <<= ~expressions_grouping_construct)
 		| (Add    <<= AExpr++[2])
 		| (Sub    <<= AExpr++[2])
 		| (Mul    <<= AExpr++[2])
@@ -111,7 +112,7 @@ namespace whilelang {
 
     inline const wf::Wellformed statements_wf =
 		(expressions_wf - Group - Paren - Do - Then - Else - Body)
-		| (FunDec <<= FunId * ParamList * (Body >>= Stmt))
+		| (FunDef <<= FunId * ParamList * (Body >>= Stmt))
 		| (Stmt <<= (Stmt >>= (Skip | Assign | While | If | Output | Block | Return)))
 		| (If <<= BExpr * (Then >>= Stmt) * (Else >>= Stmt))
 		| (While <<= BExpr * (Do >>= Stmt))
