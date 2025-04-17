@@ -32,11 +32,12 @@ namespace whilelang {
                 T(Normalize)
                         << (T(Assign)
                             << (T(Ident)[Ident] *
-                                (T(AExpr) << T(Add, Sub, Mul)[Op]))) >>
+                                (T(AExpr)[AExpr] << T(Add, Sub, Mul)[Op]))) >>
                     [](Match &_) -> Node {
                     Node op = _(Op);
                     auto curr = op->front();
 
+                    // Make sure binary ops have exactly two operands
                     for (auto it = op->begin() + 1; it != op->end(); it++) {
                         curr = AExpr << (op->type() << curr << *it);
                     }
@@ -61,9 +62,18 @@ namespace whilelang {
 
                 T(Normalize) << (T(AExpr)[AExpr] << T(Add, Sub, Mul)[Op]) >>
                     [](Match &_) -> Node {
+                    Node op = _(Op);
                     auto id = Ident ^ _(Op)->fresh();
-                    auto lhs = _(Op) / Lhs;
-                    auto rhs = _(Op) / Rhs;
+
+                    auto curr = op->front();
+
+                    // Make sure binary ops have exactly two operands
+                    for (auto it = op->begin() + 1; it != op->end(); it++) {
+                        curr = AExpr << (op->type() << curr << *it);
+                    }
+
+                    auto lhs = (curr / Expr)->front();
+                    auto rhs = (curr / Expr)->back();
 
                     auto assign = Assign
                         << id
@@ -144,6 +154,7 @@ namespace whilelang {
 
             return 0;
         });
+
         return normalization;
     }
 }
