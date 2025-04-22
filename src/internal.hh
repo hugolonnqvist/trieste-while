@@ -74,7 +74,7 @@ namespace whilelang {
 		| (Program <<= FunDef++[1])
 		| (FunDef <<= FunId * ParamList * Body)
 		| (ParamList <<= Param++)
-		| (Param <<= Ident)
+		| (Param <<= Ident)[Ident]
 		| (FunCall <<= FunId * ArgList)
 		| (FunId <<= Ident)
 		| (ArgList <<= grouping_construct++)
