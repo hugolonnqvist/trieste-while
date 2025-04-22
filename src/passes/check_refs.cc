@@ -19,7 +19,7 @@ namespace whilelang {
                 },
             }};
 
-        check_refs.pre([](Node ast) {
+        check_refs.post([](Node ast) {
             logging::Debug() << ast;
             return 0;
         });

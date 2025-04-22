@@ -53,7 +53,8 @@ namespace whilelang {
                                  << (ErrorMsg ^ "Invalid function declaration");
                 },
 
-                T(File)[File] << (Start * !(T(FunDef) * T(FunDef)++)) >>
+                T(File)[File] << (!(
+                    (T(FunDef) * T(FunDef)++) / (T(Group) << T(FunDef)))) >>
                     [](Match &_) -> Node {
                     return Error
                         << (ErrorAst << _(File))
