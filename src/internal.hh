@@ -123,7 +123,6 @@ namespace whilelang {
 		| (Assign <<= Ident * (Rhs >>= AExpr))
 		| (Output <<= AExpr)	
 		| (Block <<= Stmt++[1])
-		| (Body <<= Stmt++[1])
 		| (Return <<= AExpr)
 		| (ArgList <<= AExpr++)
 		;

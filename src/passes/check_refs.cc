@@ -11,7 +11,7 @@ namespace whilelang {
             {
                 T(AExpr) << T(Ident)[Ident] >> [](Match &_) -> Node {
                     auto def = _(Ident)->lookup();
-                    if (def.size() == 0) {
+                    if (def.empty()) {
                         return Error << (ErrorAst << _(Ident))
                                      << (ErrorMsg ^ "Undefined variable");
                     }
