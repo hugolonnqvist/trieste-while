@@ -1,2 +1,6 @@
-fun add(x, y) { res := x + y; return res; }
-fun main() { if true then return 0; else return 1};
+fun main() { 
+	var x;
+	x := 1;
+	var y;
+	output x + y;
+}

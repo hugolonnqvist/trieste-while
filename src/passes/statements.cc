@@ -51,11 +51,11 @@ namespace whilelang {
                     return FunDef << _(FunId) << _(ParamList) << body;
                 },
 
-                T(Var) << T(AExpr)[AExpr] >>
-                    [](Match &_) -> Node { return Stmt << (Var << _(AExpr)); },
+                T(Var)[Var] << T(Ident) >>
+                    [](Match &_) -> Node { return Stmt << _(Var); },
 
-                T(Return) << T(AExpr)[AExpr] >> [](Match &_) -> Node {
-                    return Stmt << (Return << _(AExpr));
+                T(Return)[Return] << T(AExpr) >> [](Match &_) -> Node {
+                    return Stmt << _(Return);
                 },
 
                 T(Semi)[Semi] << T(Stmt) >> [](Match &_) -> Node {
@@ -163,6 +163,13 @@ namespace whilelang {
                         << (ErrorAst << _(Body))
                         << (ErrorMsg ^
                             "Expected the function body to be a statement");
+                },
+
+                T(ArgList)[ArgList] << !T(AExpr) >> [](Match &_) -> Node {
+                    return Error << (ErrorAst << _(ArgList))
+                                 << (ErrorMsg ^
+                                     "Expected the function arguments to be "
+                                     "arithmetic expressions");
                 },
 
                 In(Return) * Start * (!T(AExpr))[AExpr] >>

@@ -15,7 +15,7 @@ namespace whilelang {
                 statements(),
 
                 // Checking
-                // check_refs(),
+                check_refs(),
 
                 // Normalization
                 // normalization(),

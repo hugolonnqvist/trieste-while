@@ -17,14 +17,14 @@ namespace whilelang {
 	inline const auto ParamList = TokenDef("param_list");
 	inline const auto Param = TokenDef("param");
 	inline const auto Body = TokenDef("body");
-    inline const auto Var = TokenDef("var");
+    inline const auto Var = TokenDef("var", flag::lookup);
     inline const auto Return = TokenDef("return");
 
     inline const auto FunCall = TokenDef("function_call");
     inline const auto ArgList = TokenDef("arg_list");
 
     // Statements
-    inline const auto Assign = TokenDef(":=", flag::lookup);
+    inline const auto Assign = TokenDef(":=");
 
     inline const auto Skip = TokenDef("skip");
 
