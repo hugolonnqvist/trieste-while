@@ -5,7 +5,7 @@ namespace whilelang {
 
     PassDef expressions() {
         auto UNHANDLED = --In(BExpr, AExpr, Param, FunId);
-        PassDef expressions = {
+        return {
             "expressions",
             expressions_wf,
             dir::bottomup,
@@ -98,11 +98,5 @@ namespace whilelang {
                                  << (ErrorMsg ^ "Invalid operand");
                 },
             }};
-        expressions.pre([](Node n) {
-            std::cout << "Pre expression pass:\n" << n;
-            return 0;
-        });
-
-        return expressions;
     }
 }

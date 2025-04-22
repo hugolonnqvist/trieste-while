@@ -18,6 +18,9 @@ namespace whilelang {
                 T(Semi)[Semi] << (T(FunDef) * T(FunDef)++) >>
                     [](Match &_) -> Node { return Seq << *_(Semi); },
 
+                T(Var) * T(Ident)[Ident] >>
+                    [](Match &_) -> Node { return Var << _(Ident); },
+
                 T(Group)
                         << (T(FunDef) * T(Ident)[Ident] * T(Paren)[Paren] *
                             T(Brace)[Brace]) >>
@@ -50,23 +53,36 @@ namespace whilelang {
                                  << (ErrorMsg ^ "Invalid function declaration");
                 },
 
-                T(Program)[Program] << !T(FunDef) >> [](Match &) -> Node {
+                In(File)[File] * Start * !(T(FunDef) * T(FunDef)++) >>
+                    [](Match &_) -> Node {
                     return Error
-                        << (ErrorAst << Program)
+                        << (ErrorAst << _(File))
+                        << (ErrorMsg ^
+                            "Invalid program, missing function declaration");
+                },
+
+                T(File)[File] << (Start * End) >> [](Match &_) -> Node {
+                    return Error
+                        << (ErrorAst << _(File))
+                        << (ErrorMsg ^
+                            "Invalid program, missing function declaration");
+                },
+
+                T(Program)[Program] << !T(FunDef) >> [](Match &_) -> Node {
+                    return Error
+                        << (ErrorAst << _(Program))
                         << (ErrorMsg ^ "Invalid program, missing a function");
+                },
+
+                T(Var)[Var] << !T(Ident) >> [](Match &_) -> Node {
+                    return Error << (ErrorAst << _(Var))
+                                 << (ErrorMsg ^
+                                     "Invalid variable declaration, expected "
+                                     "an identifier");
                 },
 
             }};
 
-        functions.pre([](Node n) {
-            std::cout << "Pre functions pass:\n" << n;
-            return 0;
-        });
-
-        functions.post([](Node n) {
-            std::cout << "Post functions pass:\n" << n;
-            return 0;
-        });
         return functions;
     }
 }

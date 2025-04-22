@@ -60,7 +60,7 @@ namespace whilelang {
 
         auto add_fun = [](Make &m) {
             if (m.in(Group)) {
-				m.pop(Group);
+                m.pop(Group);
             }
             m.add(FunDef);
         };
@@ -77,6 +77,7 @@ namespace whilelang {
 
               // Functions
               "fun\\b" >> [add_fun](auto &m) { add_fun(m); },
+              "var\\b" >> [](auto &m) { m.add(Var); },
               "return\\b" >> [](auto &m) { m.push(Return); },
 
               // Statements
