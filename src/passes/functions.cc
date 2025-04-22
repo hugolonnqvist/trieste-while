@@ -39,6 +39,11 @@ namespace whilelang {
                     return params;
                 },
 
+                T(Ident)[Ident] * T(Paren)[Paren] >> [](Match &_) -> Node {
+                    return FunCall << (FunId << _(Ident))
+                                   << (ArgList << *_(Paren));
+                },
+
                 T(FunDef)[FunDef] << --(T(FunId) * T(ParamList) * T(Body)) >>
                     [](Match &_) -> Node {
                     return Error << (ErrorAst << _(FunDef))

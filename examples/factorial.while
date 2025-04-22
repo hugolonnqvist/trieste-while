@@ -1,8 +1,11 @@
-n := input;
-p := 1;
-i := n;
-while 0 < i do {
-  p := i * p;
-  i := i - 1;
-};
-output p;
+fun factorial(n) {
+	if n < 1 then {
+		return 1
+	} else {
+		return n * factorial(n - 1)
+	}
+}
+
+fun main() {
+	output factorial(input)
+}

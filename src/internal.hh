@@ -28,7 +28,7 @@ namespace whilelang {
 		Skip |
 		If | Then | Else |
 		While | Do |
-		FunDef | Return |
+		FunDef | Return | FunCall |
 		Output |
 		Int | Ident | Input |
 		True | False | Not |
@@ -76,6 +76,8 @@ namespace whilelang {
 		| (FunId <<= Ident)
 		| (ParamList <<= Param++)
 		| (Param <<= Ident)
+		| (FunCall <<= FunId * ArgList)
+		| (ArgList <<= grouping_construct++)
 		| (Body <<= ~grouping_construct)
 		;
 
@@ -85,8 +87,9 @@ namespace whilelang {
 	inline const wf::Wellformed expressions_wf =
 		functions_wf
 		| (File   <<= ~expressions_grouping_construct)
-		| (AExpr  <<= (Expr >>= (Int | Ident | Mul | Add | Sub | Input)))
+		| (AExpr  <<= (Expr >>= (Int | Ident | Mul | Add | Sub | Input | FunCall)))
 		| (BExpr  <<= (Expr >>= (True | False | Not | Equals | LT | And | Or)))
+		| (ArgList <<= expressions_grouping_construct++)
 		| (Body	  <<= ~expressions_grouping_construct)
 		| (Add    <<= AExpr++[2])
 		| (Sub    <<= AExpr++[2])

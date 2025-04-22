@@ -13,7 +13,7 @@ namespace whilelang {
                 UNHANDLED * T(True, False)[Expr] >>
                     [](Match &_) -> Node { return BExpr << _(Expr); },
 
-                UNHANDLED *T(Ident, Int, Input)[Expr] >>
+                UNHANDLED *T(Ident, Int, Input, FunCall)[Expr] >>
                     [](Match &_) -> Node { return AExpr << _(Expr); },
 
                 UNHANDLED *(T(Not) << End) * T(BExpr)[BExpr] >>

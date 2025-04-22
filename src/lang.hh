@@ -21,6 +21,7 @@ namespace whilelang {
     inline const auto Return = TokenDef("return");
 
     inline const auto FunCall = TokenDef("function_call");
+    inline const auto ArgList = TokenDef("arg_list");
 
     // Statements
     inline const auto Assign = TokenDef(":=", flag::lookup);
