@@ -110,7 +110,7 @@ namespace whilelang {
                 }
             } else {
 				// Is function call
-				// FIXME
+                incoming_state[ident] = CPLatticeValue::top();
 			}
         }
         return incoming_state;
@@ -217,6 +217,7 @@ namespace whilelang {
         constant_folding.pre([=](Node) {
             auto first_state = CPLatticeValue::top();
             auto bottom = CPLatticeValue::bottom();
+            control_flow->log_instructions();
 
             analysis->forward_worklist_algoritm(
                 control_flow, first_state, bottom);

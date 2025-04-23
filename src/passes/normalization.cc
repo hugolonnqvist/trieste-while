@@ -86,11 +86,26 @@ namespace whilelang {
                 T(Normalize)
                         << (T(Assign)
                             << (T(Ident)[Ident] *
-                                (T(AExpr)[AExpr]
-                                 << T(Int, Ident, Input, FunCall)))) >>
+                                (T(AExpr)[AExpr] << T(Int, Ident, Input)))) >>
                     [](Match &_) -> Node {
                     return Assign << _(Ident)
                                   << (AExpr << (Normalize << _(AExpr)));
+                },
+
+                T(Normalize)
+                        << (T(Assign)
+                            << (T(Ident)[Ident] *
+                                (T(AExpr)[AExpr] << T(FunCall)[FunCall]))) >>
+                    [](Match &_) -> Node {
+                    auto fun_id = _(FunCall) / FunId;
+                    Node args = ArgList;
+
+                    for (auto child : *(_(FunCall) / ArgList)) {
+                        args << (Normalize << child);
+                    }
+
+                    return Assign << _(Ident)
+                                  << (AExpr << (FunCall << fun_id << args));
                 },
 
                 T(Normalize) << (T(AExpr) << T(FunCall)[FunCall]) >>

@@ -4,7 +4,7 @@ namespace whilelang {
     using namespace trieste;
 
     PassDef functions() {
-        return {
+        PassDef pass = {
             "functions",
             functions_wf,
             dir::topdown,
@@ -47,7 +47,10 @@ namespace whilelang {
                                    << (ArgList << *_(Paren));
                 },
 
-                T(ArgList) << T(Comma, Group)[Group] >> [](Match &_) -> Node {
+                T(ArgList)
+                        << (T(Comma, Group)[Group]
+                            << --(T(Ident) * T(Paren))) >>
+                    [](Match &_) -> Node {
                     Node args = ArgList;
                     for (auto child : *_(Group)) {
                         args << (Arg << child);
@@ -104,5 +107,17 @@ namespace whilelang {
                 },
 
             }};
+
+        pass.pre([](Node n) {
+            logging::Debug() << "Pre func pass:\n" << n;
+            return 0;
+        });
+
+        pass.post([](Node n) {
+            logging::Debug() << "Post func pass:\n" << n;
+            return 0;
+        });
+
+        return pass;
     }
 }

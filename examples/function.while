@@ -1,14 +1,8 @@
-fun add() { return 1 + 1 };
-fun add(x) { return 1 + x };
 fun add(x, y) { return x + y };
 
 fun main() { 
-	var x;
-	var y;
-	y := input;
-	output add(x + 1 + 2 * 2 , y + 3 + 4);
-	output add(1 + 2 + 3);
-	output add();
-	return x;
-};
+	var res;
+	res :=add(1,3);
+	output res;
+}
 
