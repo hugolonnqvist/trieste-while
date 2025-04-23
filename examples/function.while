@@ -6,7 +6,7 @@ fun main() {
 	var x;
 	var y;
 	y := input;
-	output add(x+ 1 + 2, y + 3 + 4);
+	output add(x + 1 + 2 * 2 , y + 3 + 4);
 	output add(1 + 2 + 3);
 	output add();
 	return x;

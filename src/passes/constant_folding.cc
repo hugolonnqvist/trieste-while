@@ -93,7 +93,7 @@ namespace whilelang {
             auto expr = (inst / Rhs) / Expr;
             if (expr == Atom) {
                 incoming_state[ident] = atom_flow_helper(expr, incoming_state);
-            } else {
+            } else if (expr->type().in({Add, Sub, Mul})) {
                 Node lhs = expr / Lhs;
                 Node rhs = expr / Rhs;
 
@@ -108,7 +108,10 @@ namespace whilelang {
                 } else {
                     incoming_state[ident] = CPLatticeValue::top();
                 }
-            }
+            } else {
+				// Is function call
+				// FIXME
+			}
         }
         return incoming_state;
     }
@@ -164,6 +167,8 @@ namespace whilelang {
             normalization_wf,
             dir::bottomup | dir::once,
             {
+				// FIXME:: Functions
+
                 T(Assign)[Assign]
                         << (T(Ident)[Ident] *
                             (T(AExpr) << T(Add, Sub, Mul)[Op])) >>

@@ -71,7 +71,7 @@ namespace whilelang {
 		;
 
 	inline const wf::Wellformed functions_wf = 
-		parse_wf
+		(parse_wf - File)
 		| (Top <<= Program)
 		| (Program <<= FunDef++[1])
 		| (FunDef <<= FunId * ParamList * Body)
@@ -90,7 +90,6 @@ namespace whilelang {
 
 	inline const wf::Wellformed expressions_wf =
 		functions_wf
-		| (File   <<= ~expressions_grouping_construct)
 		| (AExpr  <<= (Expr >>= (Int | Ident | Mul | Add | Sub | Input | FunCall)))
 		| (BExpr  <<= (Expr >>= (True | False | Not | Equals | LT | And | Or)))
 		| (Arg <<= AExpr)

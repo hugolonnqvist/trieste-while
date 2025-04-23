@@ -32,6 +32,9 @@ namespace whilelang {
             return get_atom_defs(inst);
         } else if (inst->type().in({Add, Sub, Mul})) {
             return get_aexpr_op_defs(inst);
+        } else if (inst == FunCall) {
+            // FIXME
+            return {};
         } else {
             throw std::runtime_error(
                 "Unexpected token, expected that parent would be of type "
@@ -116,9 +119,9 @@ namespace whilelang {
 
                 T(Stmt)[Stmt] << (T(Block)[Block] << End) >>
                     [&changes](Match &_) -> Node {
-                    if (_(Stmt)->parent()->in({If, While})) {
-                        // Make sure if and while statements don't have their
-                        // body removed
+                    if (_(Stmt)->parent()->in({If, While, FunDef})) {
+                        // Make sure fun defs and if & while statements don't
+                        // have their body removed
                         changes = true;
                         return Stmt << (Block << (Stmt << Skip));
                     }
