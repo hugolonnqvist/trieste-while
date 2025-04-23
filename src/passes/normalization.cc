@@ -17,6 +17,19 @@ namespace whilelang {
                     return Program << res;
                 },
 
+                // Error needed for fuzz testing,
+                // otherwise lift with no destination error
+                T(Normalize)
+                        << (T(FunDef)[FunDef]
+                            << (T(FunId) * T(ParamList) *
+                                (T(Stmt)[Body] << --T(Block)))) >>
+                    [](Match &_) -> Node {
+                    return Error
+                        << (ErrorAst << _(FunDef))
+                        << (ErrorMsg ^
+                            "Expected the function body to be a block stmt");
+                },
+
                 T(Normalize) << T(FunDef)[FunDef] >> [](Match &_) -> Node {
                     return FunDef << (_(FunDef) / FunId)
                                   << (_(FunDef) / ParamList)
@@ -25,8 +38,14 @@ namespace whilelang {
 
                 T(Normalize)
                         << (T(Stmt)
-                            << T(Block, Assign, If, While, Output, Skip, Return)
-                                   [Stmt]) >>
+                            << T(Block,
+                                 Var,
+                                 Assign,
+                                 If,
+                                 While,
+                                 Output,
+                                 Skip,
+                                 Return)[Stmt]) >>
                     [](Match &_) -> Node {
                     return Stmt << (Normalize << _(Stmt));
                 },
@@ -176,12 +195,8 @@ namespace whilelang {
 
                 T(Normalize) << T(BExpr)[BExpr] >>
                     [](Match &_) -> Node { return _(BExpr); },
-            }};
 
-        normalization.pre([](Node n) {
-            logging::Debug() << n;
-            return 0;
-        });
+            }};
 
         normalization.post([](Node n) {
             // Removes the instructions node
@@ -193,7 +208,6 @@ namespace whilelang {
                 program->push_back(*inst);
             }
 
-            logging::Debug() << n;
             return 0;
         });
 
