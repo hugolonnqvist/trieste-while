@@ -11,10 +11,12 @@ namespace whilelang {
         this->vars = Vars();
         this->predecessor = NodeMap<NodeSet>();
         this->successor = NodeMap<NodeSet>();
+        this->fun_call_to_def = NodeMap<Node>();
+        this->fun_def_to_calls = NodeMap<NodeSet>();
     }
 
-    void ControlFlow::add_var(Node ident) {
-        vars.insert(get_identifier(ident));
+    void ControlFlow::add_var(Node ident, std::string tag) {
+        vars.insert(get_identifier(ident) + tag);
     };
 
     void ControlFlow::add_predecessor(Node node, Node prev) {
@@ -39,6 +41,32 @@ namespace whilelang {
 
     void ControlFlow::add_successor(NodeSet nodes, Node succ) {
         append_to_nodemap(successor, nodes, succ);
+    }
+
+    void ControlFlow::set_functions_calls(
+        std::shared_ptr<NodeSet> fun_defs, std::shared_ptr<NodeSet> fun_calls) {
+        for (auto fun_call : *fun_calls) {
+            auto call_id = fun_call / FunId;
+            auto call_id_str = (call_id / Ident)->location().view();
+
+            for (auto fun_def : *fun_defs) {
+                auto fun_def_id = fun_def / FunId;
+                auto fun_def_str = (fun_def_id / Ident)->location().view();
+                if (call_id_str == fun_def_str) {
+                    append_to_nodemap(fun_def_to_calls, fun_def, fun_call);
+                    fun_call_to_def.insert({fun_call, fun_def});
+                }
+            }
+        }
+
+        for (auto fun_def : *fun_defs) {
+            if (((fun_def / FunId) / Ident)->location().view() == "main") {
+                this->program_entry = fun_def;
+                return;
+            }
+        }
+        throw std::runtime_error(
+            "No main function found. Please define a main function.");
     }
 
     void ControlFlow::log_predecessors_and_successors() {
@@ -77,6 +105,22 @@ namespace whilelang {
         logging::Debug() << "Instructions: ";
         for (size_t i = 0; i < instructions.size(); i++) {
             logging::Debug() << i + 1 << "\n" << instructions[i] << std::endl;
+        }
+    }
+    void ControlFlow::log_variables() {
+        logging::Debug() << "Variables: ";
+        for (auto var : vars) {
+            logging::Debug() << var << ",";
+        }
+    }
+
+    void ControlFlow::log_functions() {
+        logging::Debug() << "Functions: ";
+        for (auto [fun_def, calls] : fun_def_to_calls) {
+            logging::Debug() << fun_def;
+            for (auto call : calls) {
+                logging::Debug() << call << "\n";
+            }
         }
     }
 

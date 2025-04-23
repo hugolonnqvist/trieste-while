@@ -1,14 +1,16 @@
-fun add() { return 1 + 1 };
-fun add(x) { return 1 + x };
-fun add(x, y) { return x + y };
+fun mul(x, y) {
+	return x * y;
+}
+
+fun square(x) { 
+	return mul(x, x);
+};
 
 fun main() { 
 	var x;
 	var y;
-	y := input;
-	output add(x + 1 + 2 * 2 , y + 3 + 4);
-	output add(1 + 2 + 3);
-	output add();
-	return x;
-};
-
+	x := square(3);
+	y := square(input);
+	output x;
+	output y;
+}

@@ -10,7 +10,14 @@ namespace whilelang {
     }
 
     Node get_first_basic_child(Node n) {
-        while (n->type().in({Block, Stmt, While, If})) {
+        while (n->type().in({Block, Stmt, While, If, Assign})) {
+            if (n == Assign) {
+                if ((n / Rhs) / Expr == FunCall) {
+                    n = (n / Rhs) / Expr;
+                }
+                break;
+            }
+
             n = n->front();
         }
         return n;
@@ -65,6 +72,21 @@ namespace whilelang {
 
     std::string get_identifier(const Node &node) {
         return std::string(node->location().view());
+    }
+
+    std::string get_var(const Node ident) {
+        auto curr = ident;
+        while (curr != FunDef) {
+            curr = curr->parent();
+        }
+
+        auto fun_id = (curr / FunId) / Ident;
+        return get_identifier(ident) + get_identifier(fun_id);
+    };
+
+    std::string get_var(const Node ident, const Node fun_def) {
+        return get_identifier(ident) +
+            get_identifier((fun_def / FunId) / Ident);
     }
 
     Node create_const_node(int value) {

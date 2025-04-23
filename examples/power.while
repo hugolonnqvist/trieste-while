@@ -1,0 +1,7 @@
+fun power(x) {
+	return x * x;
+}
+
+fun main() {
+	output power(power(2));
+}

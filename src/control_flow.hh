@@ -15,21 +15,23 @@ namespace whilelang {
             vars.clear();
             predecessor.clear();
             successor.clear();
+            fun_call_to_def.clear();
+            fun_def_to_calls.clear();
         }
 
-        const NodeSet successors(Node node) {
+        inline const NodeSet successors(Node node) {
             return successor[node];
         };
 
-        const NodeSet predecessors(Node node) {
+        inline const NodeSet predecessors(Node node) {
             return predecessor[node];
         };
 
-        const Nodes get_instructions() {
+        inline const Nodes get_instructions() {
             return instructions;
         };
 
-        const Vars get_vars() {
+        inline const Vars get_vars() {
             return vars;
         };
 
@@ -37,7 +39,23 @@ namespace whilelang {
             instructions.push_back(inst);
         };
 
-        void add_var(Node ident);
+        inline Node get_fun_def(Node fun_call) {
+            return fun_call_to_def[fun_call];
+        };
+
+        inline NodeSet get_fun_calls_from_def(Node fun_def) {
+            return fun_def_to_calls[fun_def];
+        };
+
+        inline Node get_program_entry() {
+            return program_entry;
+        };
+
+        void set_functions_calls(
+            std::shared_ptr<NodeSet> fun_defs,
+            std::shared_ptr<NodeSet> fun_calls);
+
+        void add_var(Node ident, std::string tag);
 
         void add_predecessor(Node node, Node prev);
         void add_predecessor(Node node, NodeSet prev);
@@ -49,10 +67,15 @@ namespace whilelang {
 
         void log_predecessors_and_successors();
         void log_instructions();
+        void log_variables();
+        void log_functions();
 
       private:
+        Node program_entry;
         Nodes instructions;
         Vars vars;
+        NodeMap<Node> fun_call_to_def; // Maps fun calls to their declarations
+        NodeMap<NodeSet> fun_def_to_calls; // Maps fun defs to their call sites
         NodeMap<NodeSet> predecessor;
         NodeMap<NodeSet> successor;
 

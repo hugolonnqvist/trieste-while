@@ -28,7 +28,7 @@ namespace whilelang {
                     os << "N";
                     break;
                 case ZeroAbstractType::Bottom:
-                    os << "⊥";
+                    os << "_";
                     break;
             }
             return os;
@@ -50,27 +50,23 @@ namespace whilelang {
 
     using State = typename DataFlowAnalysis<ZeroLatticeValue>::State;
 
-    State zero_flow(Node inst, State incoming_state) {
-        if (inst == Assign) {
-            std::string var = get_identifier(inst / Ident);
-            Node rhs = (inst / Rhs) / Expr;
+    auto int_to_abstract_type = [](const Node node) {
+        return get_int_value(node) == 0 ? ZeroAbstractType::Zero :
+                                          ZeroAbstractType::NonZero;
+    };
 
-            if (rhs == Atom) {
-                auto atom = rhs / Expr;
-                if (atom == Int) {
-                    incoming_state[var].type = get_int_value(atom) == 0 ?
-                        ZeroAbstractType::Zero :
-                        ZeroAbstractType::NonZero;
-                } else if (atom == Ident) {
-                    std::string rhs_var = get_identifier(atom);
-                    incoming_state[var] = incoming_state[rhs_var];
-                } else {
-                    incoming_state[var].type = ZeroAbstractType::Top;
-                }
-            }
+    auto handle_atom = [](const Node atom,
+                          State &incoming_state) -> ZeroLatticeValue {
+        if (atom == Int) {
+            return get_int_value(atom) == 0 ? ZeroLatticeValue::zero() :
+                                              ZeroLatticeValue::non_zero();
+        } else if (atom == Ident) {
+            std::string rhs_var = get_var(atom);
+            return incoming_state[rhs_var];
+        } else {
+            return ZeroLatticeValue::top();
         }
-        return incoming_state;
-    }
+    };
 
     ZeroLatticeValue zero_join(ZeroLatticeValue x, ZeroLatticeValue y) {
         auto top = ZeroLatticeValue::top();
@@ -99,7 +95,50 @@ namespace whilelang {
         return top;
     }
 
-    PassDef z_analysis(std::shared_ptr<ControlFlow> control_flow) {
+    State zero_flow(
+        Node inst,
+        NodeMap<State> state_table,
+        std::shared_ptr<ControlFlow> cfg) {
+        auto incoming_state = state_table[inst];
+        if (inst == Assign) {
+            std::string var = get_var(inst / Ident);
+            Node rhs = (inst / Rhs) / Expr;
+
+            if (rhs == Atom) {
+                auto atom = rhs / Expr;
+                incoming_state[var] = handle_atom(atom, incoming_state);
+            } else if (rhs == FunCall) {
+                auto prevs = cfg->predecessors(inst);
+                ZeroLatticeValue val = ZeroLatticeValue::bottom();
+
+                for (auto node : prevs) {
+                    if (node == Return) {
+                        val = zero_join(
+                            val,
+                            handle_atom((node / Atom) / Expr, incoming_state));
+                    }
+                }
+
+                auto pre_fun_call_state = state_table[rhs];
+                pre_fun_call_state[var] = val;
+                return pre_fun_call_state;
+            }
+        } else if (inst == FunCall) {
+            auto params = cfg->get_fun_def(inst) / ParamList;
+            auto args = inst / ArgList;
+
+            for (size_t i = 0; i < params->size(); i++) {
+                auto param_id = params->at(i) / Ident;
+                auto arg = args->at(i) / Atom;
+                auto var = get_var(param_id);
+
+                incoming_state[var] = handle_atom(arg / Expr, incoming_state);
+            }
+        }
+        return incoming_state;
+    }
+
+    PassDef z_analysis(std::shared_ptr<ControlFlow> cfg) {
         auto analysis = std::make_shared<DataFlowAnalysis<ZeroLatticeValue>>(
             zero_join, zero_flow);
 
@@ -110,10 +149,10 @@ namespace whilelang {
             auto first_state = ZeroLatticeValue::top();
             auto bottom = ZeroLatticeValue::bottom();
 
-            analysis->forward_worklist_algoritm(
-                control_flow, first_state, bottom);
-            control_flow->log_instructions();
-            analysis->log_state_table(control_flow->get_instructions());
+            analysis->forward_worklist_algoritm(cfg, first_state, bottom);
+
+            cfg->log_instructions();
+            analysis->log_state_table(cfg->get_instructions());
 
             return 0;
         });

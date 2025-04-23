@@ -9,7 +9,7 @@ namespace whilelang {
             statements_wf,
             dir::bottomup | dir::once,
             {
-                T(AExpr) << T(Ident)[Ident] >> [](Match &_) -> Node {
+                T(AExpr, Assign) << T(Ident)[Ident] >> [](Match &_) -> Node {
                     auto def = _(Ident)->lookup();
                     if (def.empty()) {
                         return Error << (ErrorAst << _(Ident))

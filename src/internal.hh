@@ -14,6 +14,7 @@ namespace whilelang {
     PassDef check_refs();
     PassDef eval();
     PassDef normalization();
+    PassDef gather_functions(std::shared_ptr<ControlFlow> control_flow);
     PassDef gather_instructions(std::shared_ptr<ControlFlow> control_flow);
     PassDef gather_flow_graph(std::shared_ptr<ControlFlow> control_flow);
     PassDef z_analysis(std::shared_ptr<ControlFlow> control_flow);
@@ -132,7 +133,8 @@ namespace whilelang {
 		(statements_wf - Top);
 
 	inline const wf::Wellformed normalization_wf =
-		statements_wf
+		(statements_wf - Var)
+		| (Stmt <<= (Stmt >>= (Skip | Assign | While | If | Output | Block | Return)))
 		| (AExpr <<= (Expr >>= (Atom | Add | Sub | Mul | FunCall)))
 		| (Atom <<= (Expr >>= (Int | Ident | Input)))
 		| (Add <<= (Lhs >>= Atom) * (Rhs >>= Atom))

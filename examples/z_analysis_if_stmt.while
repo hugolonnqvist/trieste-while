@@ -1,11 +1,17 @@
-a := 1;
-th:=0;
-el:=0;
+fun main() {
+	var a;
+	var th;
+	var el;
 
-if false then {th := 1; th:=2; } else {th := 2; el := 2};
+	a := 1;
+	th:=0;
+	el:=0;
 
-a := 3;
-a := 0;
-output a;
-output th;
-output el;
+	if false then {th := 1; th:=2; } else {th := 2; el := 2};
+
+	a := 3;
+	a := 0;
+	output a;
+	output th;
+	output el;
+}

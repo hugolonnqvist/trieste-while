@@ -47,7 +47,10 @@ namespace whilelang {
                                    << (ArgList << *_(Paren));
                 },
 
-                T(ArgList) << T(Comma, Group)[Group] >> [](Match &_) -> Node {
+                T(ArgList)
+                        << (T(Comma, Group)[Group]
+                            << --(T(Ident) * T(Paren))) >>
+                    [](Match &_) -> Node {
                     Node args = ArgList;
                     for (auto child : *_(Group)) {
                         args << (Arg << child);
