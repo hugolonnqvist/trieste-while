@@ -22,6 +22,8 @@ namespace whilelang {
 
     inline const auto FunCall = TokenDef("function_call");
     inline const auto ArgList = TokenDef("arg_list");
+    inline const auto Arg = TokenDef("arg");
+    inline const auto Comma = TokenDef("comma");
 
     // Statements
     inline const auto Assign = TokenDef(":=");

@@ -4,7 +4,7 @@ namespace whilelang {
     using namespace trieste;
 
     PassDef statements() {
-        return {
+        PassDef pass = {
             "statements",
             statements_wf,
             dir::bottomup | dir::once,
@@ -165,7 +165,14 @@ namespace whilelang {
                             "Expected the function body to be a statement");
                 },
 
-                T(ArgList)[ArgList] << !T(AExpr) >> [](Match &_) -> Node {
+                T(ArgList)[ArgList] << !T(Arg) >> [](Match &_) -> Node {
+                    return Error << (ErrorAst << _(ArgList))
+                                 << (ErrorMsg ^
+                                     "Expected the function arguments to be "
+                                     "arguments");
+                },
+
+                T(Arg)[Arg] << !T(AExpr) >> [](Match &_) -> Node {
                     return Error << (ErrorAst << _(ArgList))
                                  << (ErrorMsg ^
                                      "Expected the function arguments to be "
@@ -194,5 +201,11 @@ namespace whilelang {
                 },
 
             }};
+		pass.post([](Node n) {
+		logging::Debug() << "Post stmt: \n" << n;
+			return 0;
+		});
+
+		return pass;
     }
 }

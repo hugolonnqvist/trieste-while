@@ -18,7 +18,7 @@ namespace whilelang {
                 check_refs(),
 
                 // Normalization
-                // normalization(),
+                normalization(),
             },
             whilelang::parser(),
         };

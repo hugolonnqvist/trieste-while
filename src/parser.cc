@@ -70,14 +70,34 @@ namespace whilelang {
               // whitespace
               "[[:space:]]+" >> [](auto &) {}, // no-op
 
-              "," >> [](auto &) {}, // no-op
+              "," >>
+                  [](auto &m) {
+                      m.seq(
+                          Comma,
+                          {
+                              Add,
+                              Sub,
+                              Mul,
+                              Equals,
+                              LT,
+                              And,
+                              Or,
+                              Assign,
+                              Else,
+                              Do,
+                              Output,
+                              Return,
+                              Group,
+                              FunDef,
+                          });
+                  },
 
               // Line comment.
               "//[^\n]*" >> [](auto &) {}, // no-op
 
               // Functions
               "fun\\b" >> [add_fun](auto &m) { add_fun(m); },
-              "var\\b" >> [](auto &m) { m.add(Var); },
+              "var\\b" >> [](auto &m) { m.push(Var); },
               "return\\b" >> [](auto &m) { m.push(Return); },
 
               // Statements
@@ -104,6 +124,8 @@ namespace whilelang {
                               Return,
                               Group,
                               FunDef,
+							  Var,
+							  Comma,
                           });
                   },
 

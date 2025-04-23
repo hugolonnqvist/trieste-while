@@ -5,7 +5,7 @@ namespace whilelang {
 
     PassDef expressions() {
         auto UNHANDLED = --In(BExpr, AExpr, Param, FunId, Var);
-        return {
+        PassDef pass = {
             "expressions",
             expressions_wf,
             dir::bottomup,
@@ -98,5 +98,11 @@ namespace whilelang {
                                  << (ErrorMsg ^ "Invalid operand");
                 },
             }};
+
+        pass.post([](Node n) {
+            logging::Debug() << "Post expr: \n" << n;
+            return 0;
+        });
+        return pass;
     }
 }

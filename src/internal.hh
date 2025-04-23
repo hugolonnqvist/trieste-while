@@ -36,7 +36,7 @@ namespace whilelang {
 		;
 
 	inline const auto grouping_construct =
-		Group | Semi | Paren | Brace |
+		Group | Semi | Paren | Brace | Comma | 
 		Add | Sub | Mul |
 		LT | Equals |
 		And | Or |
@@ -48,7 +48,9 @@ namespace whilelang {
 		| (File		<<= grouping_construct++)
 		| (FunDef	<<= ~grouping_construct)
 		| (Return	<<= ~grouping_construct)
+		| (Var	    <<= ~grouping_construct)
 		| (Semi		<<= (grouping_construct - Semi)++[1])
+		| (Comma	<<= (grouping_construct - Comma)++[1])
 		| (If		<<= ~grouping_construct)
 		| (Then		<<= ~grouping_construct)
 		| (Else		<<= ~grouping_construct)
@@ -77,7 +79,8 @@ namespace whilelang {
 		| (Param <<= Ident)[Ident]
 		| (FunCall <<= FunId * ArgList)
 		| (FunId <<= Ident)
-		| (ArgList <<= grouping_construct++)
+		| (ArgList <<= Arg++)
+		| (Arg <<= ~(grouping_construct | parse_token))
 		| (Body <<= ~grouping_construct)
 		| (Var <<= Ident)[Ident]
 		;
@@ -90,7 +93,7 @@ namespace whilelang {
 		| (File   <<= ~expressions_grouping_construct)
 		| (AExpr  <<= (Expr >>= (Int | Ident | Mul | Add | Sub | Input | FunCall)))
 		| (BExpr  <<= (Expr >>= (True | False | Not | Equals | LT | And | Or)))
-		| (ArgList <<= expressions_grouping_construct++)
+		| (Arg <<= AExpr)
 		| (Body	  <<= ~expressions_grouping_construct)
 		| (Add    <<= AExpr++[2])
 		| (Sub    <<= AExpr++[2])
@@ -124,7 +127,6 @@ namespace whilelang {
 		| (Output <<= AExpr)	
 		| (Block <<= Stmt++[1])
 		| (Return <<= AExpr)
-		| (ArgList <<= AExpr++)
 		;
 
 	inline const wf::Wellformed eval_wf =
@@ -132,8 +134,7 @@ namespace whilelang {
 
 	inline const wf::Wellformed normalization_wf =
 		statements_wf
-		| (Program <<= ~Stmt)
-		| (AExpr <<= (Expr >>= (Atom | Add | Sub | Mul)))
+		| (AExpr <<= (Expr >>= (Atom | Add | Sub | Mul | FunCall)))
 		| (Atom <<= (Expr >>= (Int | Ident | Input)))
 		| (Add <<= (Lhs >>= Atom) * (Rhs >>= Atom))
 		| (Sub <<= (Lhs >>= Atom) * (Rhs >>= Atom))
@@ -141,5 +142,7 @@ namespace whilelang {
 		| (LT <<= (Lhs >>= Atom) * (Rhs >>= Atom))
 		| (Equals <<= (Lhs >>= Atom) * (Rhs >>= Atom))
 		| (Output <<= Atom)
+		| (Return <<= Atom)
+		| (Arg <<= Atom)
 		;
 }
