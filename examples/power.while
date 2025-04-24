@@ -3,5 +3,5 @@ fun power(x) {
 }
 
 fun main() {
-	output power(power(power(input)), 1, 3);
+	output power(power(2));
 }
