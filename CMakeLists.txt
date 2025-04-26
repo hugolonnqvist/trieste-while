@@ -8,7 +8,7 @@ FetchContent_Declare(
   trieste
   GIT_REPOSITORY https://github.com/hugolonnqvist/Trieste
   GIT_BRANCH feature/conditional-pass 
-  GIT_TAG b69d61e3f062be67ba3380b86ecbf84e972fb3b8 
+  GIT_TAG 937c97852c4faf72a11d46b3f537a23ee8e8b8d5
   
   # GIT_REPOSITORY https://github.com/microsoft/Trieste
   # GIT_TAG 370ad85aa31f316f8ac39dcaaf6f4218901242e4
