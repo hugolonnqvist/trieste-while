@@ -2,10 +2,12 @@ fun factorial(n) {
 	if n < 1 then {
 		return 1
 	} else {
-		return n * factorial(n - 1)
+		return n * factorial(n - 1) // Call context here, should inherit ?
 	}
 }
 
-fun main() {
-	output factorial(input)
+fun main() { // Main has some context ?
+	output factorial(2); // Gets call context 1 {n := 2}
+	output factorial(3); // Gets call context 2 {n := 3}
+	output factorial(input); // Gets call context 3 {n:= ?}
 }

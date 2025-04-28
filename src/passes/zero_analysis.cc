@@ -28,7 +28,7 @@ namespace whilelang {
                     os << "N";
                     break;
                 case ZeroAbstractType::Bottom:
-                    os << "⊥";
+                    os << "_";
                     break;
             }
             return os;
@@ -50,25 +50,62 @@ namespace whilelang {
 
     using State = typename DataFlowAnalysis<ZeroLatticeValue>::State;
 
-    State zero_flow(Node inst, State incoming_state) {
+    auto int_to_abstract_type = [](const Node node) {
+        return get_int_value(node) == 0 ? ZeroAbstractType::Zero :
+                                          ZeroAbstractType::NonZero;
+    };
+
+    auto handle_atom =
+        [](const Node atom, const std::string var, State &incoming_state) {
+            if (atom == Int) {
+                incoming_state[var].type = int_to_abstract_type(atom);
+            } else if (atom == Ident) {
+                std::string rhs_var = get_var(atom);
+                incoming_state[var] = incoming_state[rhs_var];
+            } else {
+                incoming_state[var].type = ZeroAbstractType::Top;
+            }
+        };
+
+    State zero_flow(
+        Node inst, State incoming_state, std::shared_ptr<ControlFlow> cfg) {
         if (inst == Assign) {
-            std::string var = get_identifier(inst / Ident);
+            std::string var = get_var(inst / Ident);
             Node rhs = (inst / Rhs) / Expr;
 
             if (rhs == Atom) {
                 auto atom = rhs / Expr;
-                if (atom == Int) {
-                    incoming_state[var].type = get_int_value(atom) == 0 ?
-                        ZeroAbstractType::Zero :
-                        ZeroAbstractType::NonZero;
-                } else if (atom == Ident) {
-                    std::string rhs_var = get_identifier(atom);
-                    incoming_state[var] = incoming_state[rhs_var];
-                } else {
-                    incoming_state[var].type = ZeroAbstractType::Top;
+                handle_atom(atom, var, incoming_state);
+            } else if (rhs == FunCall) {
+                auto prevs = cfg->predecessors(inst);
+				
+                for (auto return_node : prevs) {
+                    handle_atom((return_node / Atom) / Expr, var, incoming_state);
                 }
             }
-        }
+        } else if (inst == FunCall) {
+            auto params = cfg->get_fun_def(inst) / ParamList;
+            auto args = inst / ArgList;
+
+            for (size_t i = 0; i < params->size(); i++) {
+                auto param_id = params->at(i) / Ident;
+
+                auto var = get_var(param_id);
+                auto arg = args->at(i) / Atom;
+
+                handle_atom(arg / Expr, var, incoming_state);
+            }
+        } 
+	// else if (inst == FunDef) {
+ //            auto params = inst / ParamList;
+	//
+ //            for (auto param : *params) {
+ //                auto param_id = param / Ident;
+ //                auto var = get_var(param_id);
+	//
+ //                new_state[var] = incoming_state[var];
+ //            }
+ //        }
         return incoming_state;
     }
 
@@ -105,6 +142,15 @@ namespace whilelang {
 
         PassDef z_analysis = {
             "z_analysis", normalization_wf, dir::topdown | dir::once, {}};
+
+        z_analysis.pre([=](Node) {
+            control_flow->log_instructions();
+            control_flow->log_variables();
+            control_flow->log_predecessors_and_successors();
+            logging::Debug()
+                << "--------------------------------------------------- ";
+            return 0;
+        });
 
         z_analysis.post([=](Node) {
             auto first_state = ZeroLatticeValue::top();

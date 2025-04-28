@@ -16,5 +16,7 @@ namespace whilelang {
 
     std::string get_identifier(const Node &node);
 
+    std::string get_var(const Node ident);
+
     Node create_const_node(int value);
 }

@@ -86,7 +86,7 @@ namespace whilelang {
         }
     };
 
-    State cp_flow(Node inst, State incoming_state) {
+    State cp_flow(Node inst, State incoming_state, std::shared_ptr<ControlFlow>) {
         if (inst == Assign) {
             std::string ident = get_identifier(inst / Ident);
 
