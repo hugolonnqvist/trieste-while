@@ -1,14 +1,13 @@
-fun mul(x, y) {
-	return x * y;
-}
+
 fun square(x) { 
-	return mul(x, x);
+	return x * x;
 };
 
 fun main() { 
 	var x;
-	x := 2;
-	x :=square(x);
+	var y;
+	x := square(input);
+	y := square(3);
 	output x;
+	output y;
 }
-

@@ -22,6 +22,17 @@ namespace whilelang {
                     fun_calls->insert(_(FunCall));
                     return NoChange;
                 },
+                //            T(Return)[Return] >> [=](Match &_) -> Node {
+                //                auto inst = _(Return);
+                //
+                //                while (inst != FunDef) {
+                //                    inst = inst->parent();
+                //                }
+                //                auto fun_id = (inst / FunId) / Ident;
+                //                cfg->add_var(_(Return),
+                //                get_identifier(fun_id));
+                // return NoChange;
+                //            },
             }};
 
         gather_functions.post([=](Node) {
@@ -165,7 +176,7 @@ namespace whilelang {
                     cfg->add_successor(fun_def, first_body);
                     cfg->add_predecessor(first_body, fun_def);
 
-					return NoChange;
+                    return NoChange;
                 },
 
                 T(FunCall)[FunCall] >> [=](Match &_) -> Node {
@@ -186,6 +197,14 @@ namespace whilelang {
                     cfg->add_predecessor(first_post, last_prevs);
                     cfg->add_successor(last_prevs, first_post);
 
+                    if (_(Post) / Stmt == Assign) {
+                        auto ass = _(Post) / Stmt;
+                        if ((ass / Rhs) / Expr == FunCall) {
+							// std::cout << "I ACTUALLY DID THIS _____________________________________________________";
+                            cfg->add_predecessor(ass, last_prevs);
+                            cfg->add_successor(last_prevs, ass);
+                        }
+                    }
                     return NoChange;
                 },
             }};

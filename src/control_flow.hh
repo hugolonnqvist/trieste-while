@@ -16,21 +16,22 @@ namespace whilelang {
             predecessor.clear();
             successor.clear();
             fun_call_to_def.clear();
+            fun_def_to_calls.clear();
         }
 
-        const NodeSet successors(Node node) {
+        inline const NodeSet successors(Node node) {
             return successor[node];
         };
 
-        const NodeSet predecessors(Node node) {
+        inline const NodeSet predecessors(Node node) {
             return predecessor[node];
         };
 
-        const Nodes get_instructions() {
+        inline const Nodes get_instructions() {
             return instructions;
         };
 
-        const Vars get_vars() {
+        inline const Vars get_vars() {
             return vars;
         };
 
@@ -38,15 +39,15 @@ namespace whilelang {
             instructions.push_back(inst);
         };
 
-        Node get_fun_def(Node fun_call) {
+        inline Node get_fun_def(Node fun_call) {
             return fun_call_to_def[fun_call];
         };
 
-        NodeSet get_fun_calls_from_def(Node fun_def) {
+        inline NodeSet get_fun_calls_from_def(Node fun_def) {
             return fun_def_to_calls[fun_def];
         };
 
-        Node get_program_entry() {
+        inline Node get_program_entry() {
             return program_entry;
         };
 

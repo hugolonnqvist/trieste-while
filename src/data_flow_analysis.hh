@@ -161,13 +161,8 @@ namespace whilelang {
         const Vars vars = cfg->get_vars();
 
         std::deque<Node> worklist{cfg->get_program_entry()};
-
-        // logging::Debug() << "Program entry is: " << cfg->get_program_entry();
-
         this->init(
             instructions, vars, cfg->get_program_entry(), first_state, bottom);
-
-        // log_state_table(instructions);
 
         while (!worklist.empty()) {
             Node inst = worklist.front();
@@ -177,6 +172,8 @@ namespace whilelang {
             State out_state = flow_fn(inst, state_table, cfg);
 
             state_table[inst] = out_state;
+            logging::Debug() << "Instruction: " << inst << " has table";
+            log_state_table(instructions);
 
             for (Node succ : cfg->successors(inst)) {
                 State succ_state = state_table[succ];
@@ -193,7 +190,7 @@ namespace whilelang {
     template<typename LatticeValue>
     void
     DataFlowAnalysis<LatticeValue>::log_state_table(const Nodes instructions) {
-        const int width = 12;
+        const int width = 15;
         const int number_of_vars = state_table[instructions[0]].size();
         std::stringstream str_builder;
 
@@ -215,11 +212,11 @@ namespace whilelang {
             }
             auto fun_str = get_identifier((curr / FunId) / Ident);
             for (const auto &[var, value] : state_table[instructions[i]]) {
-                if (var.ends_with(fun_str)) {
+                // if (var.ends_with(fun_str)) {
                     str_builder << std::setw(width) << value;
-                } else {
-                    str_builder << std::setw(width) << "_";
-                }
+                // } else {
+                //     str_builder << std::setw(width) << "_";
+                // }
             }
             str_builder << '\n';
         }
