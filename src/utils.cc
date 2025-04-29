@@ -84,6 +84,11 @@ namespace whilelang {
         return get_identifier(ident) + get_identifier(fun_id);
     };
 
+    std::string get_var(const Node ident, const Node fun_def) {
+        return get_identifier(ident) +
+            get_identifier((fun_def / FunId) / Ident);
+    }
+
     Node create_const_node(int value) {
         return Int ^ std::to_string(value);
     };

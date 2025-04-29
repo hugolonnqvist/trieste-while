@@ -63,13 +63,12 @@ namespace whilelang {
             if (expr == Int) {
                 return CPLatticeValue::constant(get_int_value(expr));
             } else if (expr == Ident) {
-                std::string rhs_ident = get_identifier(expr);
+                std::string rhs_ident = get_var(expr);
                 return incoming_state[rhs_ident];
             }
         }
 
         return CPLatticeValue::top();
-        ;
     }
 
     auto apply_op = [](Node op, int x, int y) {
@@ -85,36 +84,6 @@ namespace whilelang {
                 std::string(op->type().str()));
         }
     };
-
-    State cp_flow(Node inst, State incoming_state, std::shared_ptr<ControlFlow>) {
-        if (inst == Assign) {
-            std::string ident = get_identifier(inst / Ident);
-
-            auto expr = (inst / Rhs) / Expr;
-            if (expr == Atom) {
-                incoming_state[ident] = atom_flow_helper(expr, incoming_state);
-            } else if (expr->type().in({Add, Sub, Mul})) {
-                Node lhs = expr / Lhs;
-                Node rhs = expr / Rhs;
-
-                auto lhs_value = atom_flow_helper(lhs, incoming_state);
-                auto rhs_value = atom_flow_helper(rhs, incoming_state);
-
-                if (lhs_value.type == CPAbstractType::Constant &&
-                    rhs_value.type == CPAbstractType::Constant) {
-                    auto op_result =
-                        apply_op(expr, *lhs_value.value, *rhs_value.value);
-                    incoming_state[ident] = CPLatticeValue::constant(op_result);
-                } else {
-                    incoming_state[ident] = CPLatticeValue::top();
-                }
-            } else {
-				// Is function call
-                incoming_state[ident] = CPLatticeValue::top();
-			}
-        }
-        return incoming_state;
-    }
 
     CPLatticeValue cp_join(CPLatticeValue x, CPLatticeValue y) {
         CPAbstractType top = CPAbstractType::Top;
@@ -142,6 +111,63 @@ namespace whilelang {
         return CPLatticeValue::top();
     }
 
+    State cp_flow(
+        Node inst,
+        NodeMap<State> state_table,
+        std::shared_ptr<ControlFlow> cfg) {
+        auto incoming_state = state_table[inst];
+
+        if (inst == Assign) {
+            std::string var = get_var(inst / Ident);
+
+            auto expr = (inst / Rhs) / Expr;
+            if (expr == Atom) {
+                incoming_state[var] = atom_flow_helper(expr, incoming_state);
+            } else if (expr->type().in({Add, Sub, Mul})) {
+                Node lhs = expr / Lhs;
+                Node rhs = expr / Rhs;
+
+                auto lhs_value = atom_flow_helper(lhs, incoming_state);
+                auto rhs_value = atom_flow_helper(rhs, incoming_state);
+
+                if (lhs_value.type == CPAbstractType::Constant &&
+                    rhs_value.type == CPAbstractType::Constant) {
+                    auto op_result =
+                        apply_op(expr, *lhs_value.value, *rhs_value.value);
+                    incoming_state[var] = CPLatticeValue::constant(op_result);
+                } else {
+                    incoming_state[var] = CPLatticeValue::top();
+                }
+            } else {
+                // // Is function call
+                auto prevs = cfg->predecessors(inst);
+                CPLatticeValue val = CPLatticeValue::bottom();
+
+                for (auto return_node : prevs) {
+                    val = cp_join(
+                        val,
+                        atom_flow_helper(return_node / Atom, incoming_state));
+                }
+                auto pre_fun_call_state = state_table[expr];
+                pre_fun_call_state[var] = val;
+                return pre_fun_call_state;
+            }
+        } else if (inst == FunCall) {
+            auto params = cfg->get_fun_def(inst) / ParamList;
+            auto args = inst / ArgList;
+
+            for (size_t i = 0; i < params->size(); i++) {
+                auto param_id = params->at(i) / Ident;
+
+                auto var = get_var(param_id);
+                auto arg = args->at(i) / Atom;
+
+                incoming_state[var] = atom_flow_helper(arg, incoming_state);
+            }
+        }
+        return incoming_state;
+    }
+
     PassDef constant_folding(std::shared_ptr<ControlFlow> control_flow) {
         auto analysis = std::make_shared<DataFlowAnalysis<CPLatticeValue>>(
             cp_join, cp_flow);
@@ -167,7 +193,32 @@ namespace whilelang {
             normalization_wf,
             dir::bottomup | dir::once,
             {
-				// FIXME:: Functions
+                T(FunCall)[FunCall]
+                        << (T(FunId)[FunId] * T(ArgList)[ArgList]) >>
+                    [=](Match &_) -> Node {
+                    Node args = ArgList;
+                    bool changed = false;
+
+                    for (auto arg : *_(ArgList)) {
+                        if ((arg / Atom) / Expr == Ident) {
+                            auto var = get_var((arg / Atom) / Expr);
+
+                            auto lattice_value =
+                                analysis->get_lattice_value(_(FunCall), var);
+
+                            if (lattice_value.type ==
+                                CPAbstractType::Constant) {
+                                changed = true;
+                                args
+                                    << (Arg << ident_to_const(
+                                            *lattice_value.value));
+                            } else {
+                                args << arg;
+                            }
+                        }
+                    }
+                    return changed ? FunCall << _(FunId) << args : NoChange;
+                },
 
                 T(Assign)[Assign]
                         << (T(Ident)[Ident] *
@@ -176,8 +227,8 @@ namespace whilelang {
                     auto inst = _(Assign);
                     auto ident = _(Ident);
 
-                    auto lattice_value = analysis->get_lattice_value(
-                        inst, get_identifier(ident));
+                    auto lattice_value =
+                        analysis->get_lattice_value(inst, get_var(ident));
 
                     if (lattice_value.type == CPAbstractType::Constant) {
                         return Assign
@@ -217,7 +268,7 @@ namespace whilelang {
         constant_folding.pre([=](Node) {
             auto first_state = CPLatticeValue::top();
             auto bottom = CPLatticeValue::bottom();
-            control_flow->log_instructions();
+            // control_flow->log_instructions();
 
             analysis->forward_worklist_algoritm(
                 control_flow, first_state, bottom);

@@ -55,59 +55,18 @@ namespace whilelang {
                                           ZeroAbstractType::NonZero;
     };
 
-    auto handle_atom =
-        [](const Node atom, const std::string var, State &incoming_state) {
-            if (atom == Int) {
-                incoming_state[var].type = int_to_abstract_type(atom);
-            } else if (atom == Ident) {
-                std::string rhs_var = get_var(atom);
-                incoming_state[var] = incoming_state[rhs_var];
-            } else {
-                incoming_state[var].type = ZeroAbstractType::Top;
-            }
-        };
-
-    State zero_flow(
-        Node inst, State incoming_state, std::shared_ptr<ControlFlow> cfg) {
-        if (inst == Assign) {
-            std::string var = get_var(inst / Ident);
-            Node rhs = (inst / Rhs) / Expr;
-
-            if (rhs == Atom) {
-                auto atom = rhs / Expr;
-                handle_atom(atom, var, incoming_state);
-            } else if (rhs == FunCall) {
-                auto prevs = cfg->predecessors(inst);
-				
-                for (auto return_node : prevs) {
-                    handle_atom((return_node / Atom) / Expr, var, incoming_state);
-                }
-            }
-        } else if (inst == FunCall) {
-            auto params = cfg->get_fun_def(inst) / ParamList;
-            auto args = inst / ArgList;
-
-            for (size_t i = 0; i < params->size(); i++) {
-                auto param_id = params->at(i) / Ident;
-
-                auto var = get_var(param_id);
-                auto arg = args->at(i) / Atom;
-
-                handle_atom(arg / Expr, var, incoming_state);
-            }
-        } 
-	// else if (inst == FunDef) {
- //            auto params = inst / ParamList;
-	//
- //            for (auto param : *params) {
- //                auto param_id = param / Ident;
- //                auto var = get_var(param_id);
-	//
- //                new_state[var] = incoming_state[var];
- //            }
- //        }
-        return incoming_state;
-    }
+    auto handle_atom = [](const Node atom,
+                          State &incoming_state) -> ZeroLatticeValue {
+        if (atom == Int) {
+            return get_int_value(atom) == 0 ? ZeroLatticeValue::zero() :
+                                              ZeroLatticeValue::non_zero();
+        } else if (atom == Ident) {
+            std::string rhs_var = get_var(atom);
+            return incoming_state[rhs_var];
+        } else {
+            return ZeroLatticeValue::top();
+        }
+    };
 
     ZeroLatticeValue zero_join(ZeroLatticeValue x, ZeroLatticeValue y) {
         auto top = ZeroLatticeValue::top();
@@ -136,6 +95,48 @@ namespace whilelang {
         return top;
     }
 
+    State zero_flow(
+        Node inst,
+        NodeMap<State> state_table,
+        std::shared_ptr<ControlFlow> cfg) {
+        auto incoming_state = state_table[inst];
+        if (inst == Assign) {
+            std::string var = get_var(inst / Ident);
+            Node rhs = (inst / Rhs) / Expr;
+
+            if (rhs == Atom) {
+                auto atom = rhs / Expr;
+                incoming_state[var] = handle_atom(atom, incoming_state);
+            } else if (rhs == FunCall) {
+                auto prevs = cfg->predecessors(inst);
+                ZeroLatticeValue val = ZeroLatticeValue::bottom();
+
+                for (auto return_node : prevs) {
+                    val = zero_join(
+                        val,
+                        handle_atom(
+                            (return_node / Atom) / Expr, incoming_state));
+                }
+
+                auto pre_fun_call_state = state_table[rhs];
+                pre_fun_call_state[var] = val;
+                return pre_fun_call_state;
+            }
+        } else if (inst == FunCall) {
+            auto params = cfg->get_fun_def(inst) / ParamList;
+            auto args = inst / ArgList;
+
+            for (size_t i = 0; i < params->size(); i++) {
+                auto param_id = params->at(i) / Ident;
+                auto arg = args->at(i) / Atom;
+                auto var = get_var(param_id);
+
+                incoming_state[var] = handle_atom(arg / Expr, incoming_state);
+            }
+        }
+        return incoming_state;
+    }
+
     PassDef z_analysis(std::shared_ptr<ControlFlow> control_flow) {
         auto analysis = std::make_shared<DataFlowAnalysis<ZeroLatticeValue>>(
             zero_join, zero_flow);
@@ -144,11 +145,11 @@ namespace whilelang {
             "z_analysis", normalization_wf, dir::topdown | dir::once, {}};
 
         z_analysis.pre([=](Node) {
-            control_flow->log_instructions();
-            control_flow->log_variables();
-            control_flow->log_predecessors_and_successors();
-            logging::Debug()
-                << "--------------------------------------------------- ";
+            // control_flow->log_instructions();
+            // control_flow->log_variables();
+            // control_flow->log_predecessors_and_successors();
+            // logging::Debug()
+            //     << "--------------------------------------------------- ";
             return 0;
         });
 

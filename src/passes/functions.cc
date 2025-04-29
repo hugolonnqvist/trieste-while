@@ -4,7 +4,7 @@ namespace whilelang {
     using namespace trieste;
 
     PassDef functions() {
-        PassDef pass = {
+        return {
             "functions",
             functions_wf,
             dir::topdown,
@@ -107,17 +107,5 @@ namespace whilelang {
                 },
 
             }};
-
-        pass.pre([](Node n) {
-            logging::Debug() << "Pre func pass:\n" << n;
-            return 0;
-        });
-
-        pass.post([](Node n) {
-            logging::Debug() << "Post func pass:\n" << n;
-            return 0;
-        });
-
-        return pass;
     }
 }

@@ -11,10 +11,12 @@ namespace whilelang {
       public:
         using State = std::map<std::string, LatticeValue>;
         using JoinFn = std::function<LatticeValue(LatticeValue, LatticeValue)>;
-        using FlowFn =
-            std::function<State(Node, State, std::shared_ptr<ControlFlow>)>;
+        using FlowFn = std::function<State(
+            Node, NodeMap<State>, std::shared_ptr<ControlFlow>)>;
 
         DataFlowAnalysis(JoinFn join_fn, FlowFn flow_fn);
+
+        State create_state(Vars vars, LatticeValue value);
 
         LatticeValue get_lattice_value(Node inst, std::string var);
 
@@ -36,14 +38,6 @@ namespace whilelang {
 
         bool state_equals(State x, State y);
 
-        State create_state(Vars vars, LatticeValue value) {
-            State state = State();
-            for (auto var : vars) {
-                state[var] = value;
-            }
-            return state;
-        }
-
         void init(
             const Nodes instructions,
             const Vars vars,
@@ -51,6 +45,17 @@ namespace whilelang {
             LatticeValue first_state,
             LatticeValue bottom);
     };
+
+    template<typename LatticeValue>
+    typename DataFlowAnalysis<LatticeValue>::State
+    DataFlowAnalysis<LatticeValue>::create_state(
+        Vars vars, LatticeValue value) {
+        State state = State();
+        for (auto var : vars) {
+            state[var] = value;
+        }
+        return state;
+    }
 
     template<typename LatticeValue>
     DataFlowAnalysis<LatticeValue>::DataFlowAnalysis(JoinFn join, FlowFn flow) {
@@ -157,34 +162,23 @@ namespace whilelang {
 
         std::deque<Node> worklist{cfg->get_program_entry()};
 
-        logging::Debug() << "Program entry is: " << cfg->get_program_entry();
+        // logging::Debug() << "Program entry is: " << cfg->get_program_entry();
 
         this->init(
             instructions, vars, cfg->get_program_entry(), first_state, bottom);
 
-        log_state_table(instructions);
+        // log_state_table(instructions);
 
         while (!worklist.empty()) {
             Node inst = worklist.front();
             worklist.pop_front();
 
             State in_state = state_table[inst];
-            State out_state = flow_fn(inst, in_state, cfg);
+            State out_state = flow_fn(inst, state_table, cfg);
 
             state_table[inst] = out_state;
 
             for (Node succ : cfg->successors(inst)) {
-                // if (succ == FunDef) {
-                //     auto params = inst / ParamList;
-                //     State new_state = create_state(vars, bottom);
-                //
-                //     for (auto param : *params) {
-                //         auto param_id = param / Ident;
-                //         auto var = get_var(param_id);
-                //
-                //         new_state[var] = incoming_state[var];
-                //     }
-                // }
                 State succ_state = state_table[succ];
                 State new_succ_state = this->join(out_state, succ_state);
 
@@ -199,7 +193,7 @@ namespace whilelang {
     template<typename LatticeValue>
     void
     DataFlowAnalysis<LatticeValue>::log_state_table(const Nodes instructions) {
-        const int width = 8;
+        const int width = 12;
         const int number_of_vars = state_table[instructions[0]].size();
         std::stringstream str_builder;
 

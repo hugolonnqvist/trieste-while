@@ -19,8 +19,8 @@ namespace whilelang {
                 },
             }};
 
-        pass.pre([](Node n) {
-            logging::Debug() << "Pre check refs:\n" << n;
+        pass.pre([](Node) {
+            // logging::Debug() << "Pre check refs:\n" << n;
             return 0;
         });
 
