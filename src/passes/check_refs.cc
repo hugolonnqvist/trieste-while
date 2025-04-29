@@ -4,7 +4,7 @@ namespace whilelang {
     using namespace trieste;
 
     PassDef check_refs() {
-        PassDef pass = {
+        return {
             "check_refs",
             statements_wf,
             dir::bottomup | dir::once,
@@ -18,12 +18,5 @@ namespace whilelang {
                     return NoChange;
                 },
             }};
-
-        pass.pre([](Node) {
-            // logging::Debug() << "Pre check refs:\n" << n;
-            return 0;
-        });
-
-        return pass;
     }
 }

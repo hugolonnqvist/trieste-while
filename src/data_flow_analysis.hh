@@ -212,11 +212,11 @@ namespace whilelang {
             }
             auto fun_str = get_identifier((curr / FunId) / Ident);
             for (const auto &[var, value] : state_table[instructions[i]]) {
-                // if (var.ends_with(fun_str)) {
+                if (var.ends_with(fun_str)) {
                     str_builder << std::setw(width) << value;
-                // } else {
-                //     str_builder << std::setw(width) << "_";
-                // }
+                } else {
+                    str_builder << std::setw(width) << "_";
+                }
             }
             str_builder << '\n';
         }

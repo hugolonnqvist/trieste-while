@@ -12,8 +12,8 @@ namespace whilelang {
                 gather_functions(control_flow),
                 gather_instructions(control_flow),
                 gather_flow_graph(control_flow),
-                // z_analysis(control_flow),
-                constant_folding(control_flow),
+                z_analysis(control_flow),
+                // constant_folding(control_flow),
 
                 // gather_functions(control_flow),
                 // gather_instructions(control_flow),

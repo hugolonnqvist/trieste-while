@@ -1,13 +1,13 @@
 
 fun square(x) { 
-	return x * x;
+	return x;
 };
 
 fun main() { 
 	var x;
 	var y;
-	x := square(input);
-	y := square(3);
+	x := square(3);
+	y := square(input);
 	output x;
 	output y;
 }

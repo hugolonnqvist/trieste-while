@@ -111,11 +111,12 @@ namespace whilelang {
                 auto prevs = cfg->predecessors(inst);
                 ZeroLatticeValue val = ZeroLatticeValue::bottom();
 
-                for (auto return_node : prevs) {
-                    val = zero_join(
-                        val,
-                        handle_atom(
-                            (return_node / Atom) / Expr, incoming_state));
+                for (auto node : prevs) {
+                    if (node == Return) {
+                        val = zero_join(
+                            val,
+                            handle_atom((node / Atom) / Expr, incoming_state));
+                    }
                 }
 
                 auto pre_fun_call_state = state_table[rhs];
@@ -137,30 +138,21 @@ namespace whilelang {
         return incoming_state;
     }
 
-    PassDef z_analysis(std::shared_ptr<ControlFlow> control_flow) {
+    PassDef z_analysis(std::shared_ptr<ControlFlow> cfg) {
         auto analysis = std::make_shared<DataFlowAnalysis<ZeroLatticeValue>>(
             zero_join, zero_flow);
 
         PassDef z_analysis = {
             "z_analysis", normalization_wf, dir::topdown | dir::once, {}};
 
-        z_analysis.pre([=](Node) {
-            // control_flow->log_instructions();
-            // control_flow->log_variables();
-            // control_flow->log_predecessors_and_successors();
-            // logging::Debug()
-            //     << "--------------------------------------------------- ";
-            return 0;
-        });
-
         z_analysis.post([=](Node) {
             auto first_state = ZeroLatticeValue::top();
             auto bottom = ZeroLatticeValue::bottom();
 
-            analysis->forward_worklist_algoritm(
-                control_flow, first_state, bottom);
-            control_flow->log_instructions();
-            analysis->log_state_table(control_flow->get_instructions());
+            analysis->forward_worklist_algoritm(cfg, first_state, bottom);
+
+            cfg->log_instructions();
+            analysis->log_state_table(cfg->get_instructions());
 
             return 0;
         });
