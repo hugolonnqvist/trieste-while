@@ -1,6 +1,9 @@
+fun mul(x, y) {
+	return x * y;
+}
 
 fun square(x) { 
-	return x;
+	return mul(x, x);
 };
 
 fun main() { 

@@ -172,8 +172,6 @@ namespace whilelang {
             State out_state = flow_fn(inst, state_table, cfg);
 
             state_table[inst] = out_state;
-            logging::Debug() << "Instruction: " << inst << " has table";
-            log_state_table(instructions);
 
             for (Node succ : cfg->successors(inst)) {
                 State succ_state = state_table[succ];

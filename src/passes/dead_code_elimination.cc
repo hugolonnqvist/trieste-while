@@ -196,11 +196,7 @@ namespace whilelang {
 
             set_lattice->init(instructions);
 
-            // FIXME Can not have always back as first. Depends on program
-            // layout. Similar to CP, needs program exit (analog to program
-            // entry)
             std::deque<Node> worklist{instructions.begin(), instructions.end()};
-            // cfg->log_predecessors_and_successors();
 
             while (!worklist.empty()) {
                 Node inst = worklist.front();
@@ -245,7 +241,6 @@ namespace whilelang {
                 // If no instructions left, don't run analysis again
                 changes = false;
             }
-            changes = false;
             return 0;
         });
 
