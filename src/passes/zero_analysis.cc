@@ -50,18 +50,13 @@ namespace whilelang {
 
     using State = typename DataFlowAnalysis<ZeroLatticeValue>::State;
 
-    auto int_to_abstract_type = [](const Node node) {
-        return get_int_value(node) == 0 ? ZeroAbstractType::Zero :
-                                          ZeroAbstractType::NonZero;
-    };
-
     auto handle_atom = [](const Node atom,
                           State &incoming_state) -> ZeroLatticeValue {
         if (atom == Int) {
             return get_int_value(atom) == 0 ? ZeroLatticeValue::zero() :
                                               ZeroLatticeValue::non_zero();
         } else if (atom == Ident) {
-            std::string rhs_var = get_var(atom);
+            std::string rhs_var = get_identifier(atom);
             return incoming_state[rhs_var];
         } else {
             return ZeroLatticeValue::top();
@@ -101,8 +96,9 @@ namespace whilelang {
         std::shared_ptr<ControlFlow> cfg) {
         auto incoming_state = state_table[inst];
         if (inst == Assign) {
-            std::string var = get_var(inst / Ident);
+            auto var = get_identifier(inst / Ident);
             Node rhs = (inst / Rhs) / Expr;
+			std::cout << "Var" << var << std::endl;
 
             if (rhs == Atom) {
                 auto atom = rhs / Expr;
@@ -130,11 +126,12 @@ namespace whilelang {
             for (size_t i = 0; i < params->size(); i++) {
                 auto param_id = params->at(i) / Ident;
                 auto arg = args->at(i) / Atom;
-                auto var = get_var(param_id);
+                auto var = get_identifier(param_id);
 
                 incoming_state[var] = handle_atom(arg / Expr, incoming_state);
             }
         }
+
         return incoming_state;
     }
 
@@ -149,6 +146,7 @@ namespace whilelang {
             auto first_state = ZeroLatticeValue::top();
             auto bottom = ZeroLatticeValue::bottom();
 
+            cfg->log_instructions();
             analysis->forward_worklist_algoritm(cfg, first_state, bottom);
 
             cfg->log_instructions();

@@ -1,6 +1,6 @@
 #include "../internal.hh"
-
 namespace whilelang {
+
     using namespace trieste;
 
     PassDef check_refs() {

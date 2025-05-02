@@ -26,6 +26,7 @@ src/passes/expressions.cc
 src/passes/statements.cc
 src/passes/check_refs.cc
 src/passes/eval.cc
+src/passes/unique_variables.cc
 src/passes/normalization.cc
 src/passes/gather_control_flow.cc
 src/passes/zero_analysis.cc
@@ -45,6 +46,7 @@ src/passes/functions.cc
 src/passes/expressions.cc
 src/passes/statements.cc
 src/passes/check_refs.cc
+src/passes/unique_variables.cc
 src/passes/normalization.cc
 )
 

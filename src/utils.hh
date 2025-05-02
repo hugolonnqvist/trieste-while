@@ -17,7 +17,9 @@ namespace whilelang {
     std::string get_identifier(const Node &node);
 
     std::string get_var(const Node ident);
-    std::string get_var(const Node ident, const Node fun_def);
+    // std::string get_var(const Node ident, const Node fun_def);
 
     Node create_const_node(int value);
+
+	void log_var_map(std::shared_ptr<std::map<std::string, std::string>> vars_map);
 }

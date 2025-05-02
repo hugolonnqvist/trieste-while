@@ -5,22 +5,28 @@
 namespace whilelang {
     using namespace trieste;
 
-    Reader reader() {
-        return {
+    Reader
+    reader(std::shared_ptr<std::map<std::string, std::string>> vars_map) {
+        Reader reader = {
             "while",
             {
                 // Parsing
-				functions(),
+                functions(),
                 expressions(),
                 statements(),
 
                 // Checking
                 check_refs(),
 
+                // Fix unique variables
+                unique_variables(vars_map),
+
                 // Normalization
                 normalization(),
             },
             whilelang::parser(),
         };
+
+        return reader;
     }
 }

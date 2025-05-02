@@ -13,6 +13,8 @@ namespace whilelang {
     PassDef expressions();
     PassDef statements();
     PassDef check_refs();
+    PassDef unique_variables(
+        std::shared_ptr<std::map<std::string, std::string>> vars_map);
 
     // Evaluation
     PassDef eval();

@@ -70,7 +70,7 @@ namespace whilelang {
                             inst = inst->parent();
                         }
                         auto fun_id = (inst / FunId) / Ident;
-                        cfg->add_var(ident, get_identifier(fun_id));
+                        cfg->add_var(ident);
                     }
 
                     return NoChange;
@@ -85,7 +85,7 @@ namespace whilelang {
                         curr = curr->parent();
                     }
                     auto fun_id = (curr / FunId) / Ident;
-                    cfg->add_var(ident, get_identifier(fun_id));
+                    cfg->add_var(ident);
 
                     return NoChange;
                 },

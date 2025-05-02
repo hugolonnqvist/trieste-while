@@ -9,8 +9,8 @@ fun square(x) {
 fun main() { 
 	var x;
 	var y;
-	x := square(3);
-	y := square(3);
+	x := square(3 + 2 + 3 + 4);
+	y := square(3 + 2 + 3 + 4);
 	output x;
 	output y;
 }

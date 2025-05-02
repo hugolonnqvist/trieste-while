@@ -1,4 +1,5 @@
 #include "lang.hh"
+#include "utils.hh"
 
 #include <CLI/CLI.hpp>
 #include <trieste/trieste.h>
@@ -35,7 +36,8 @@ int main(int argc, char const *argv[]) {
         return app.exit(e);
     }
 
-    auto reader = whilelang::reader().file(input_path);
+    auto vars_map = std::make_shared<std::map<std::string, std::string>>();
+    auto reader = whilelang::reader(vars_map).file(input_path);
 
     try {
         auto result = reader.read();
@@ -64,6 +66,8 @@ int main(int argc, char const *argv[]) {
         }
         trieste::logging::Debug() << "AST after all passes: " << std::endl
                                   << result.ast;
+        whilelang::log_var_map(vars_map);
+
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
     }

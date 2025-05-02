@@ -13,11 +13,11 @@ namespace whilelang {
         this->successor = NodeMap<NodeSet>();
         this->fun_call_to_def = NodeMap<Node>();
         this->fun_def_to_calls = NodeMap<NodeSet>();
-		this->dirty_flag = false;
+        this->dirty_flag = false;
     }
 
-    void ControlFlow::add_var(Node ident, std::string tag) {
-        vars.insert(get_identifier(ident) + tag);
+    void ControlFlow::add_var(Node ident) {
+        vars.insert(get_identifier(ident));
     };
 
     void ControlFlow::add_predecessor(Node node, Node prev) {
@@ -48,11 +48,11 @@ namespace whilelang {
         std::shared_ptr<NodeSet> fun_defs, std::shared_ptr<NodeSet> fun_calls) {
         for (auto fun_call : *fun_calls) {
             auto call_id = fun_call / FunId;
-            auto call_id_str = (call_id / Ident)->location().view();
+            auto call_id_str = get_identifier(call_id / Ident);
 
             for (auto fun_def : *fun_defs) {
                 auto fun_def_id = fun_def / FunId;
-                auto fun_def_str = (fun_def_id / Ident)->location().view();
+                auto fun_def_str = get_identifier(fun_def_id / Ident);
                 if (call_id_str == fun_def_str) {
                     append_to_nodemap(fun_def_to_calls, fun_def, fun_call);
                     fun_call_to_def.insert({fun_call, fun_def});
@@ -61,7 +61,7 @@ namespace whilelang {
         }
 
         for (auto fun_def : *fun_defs) {
-            if (((fun_def / FunId) / Ident)->location().view() == "main") {
+            if (get_identifier((fun_def / FunId) / Ident) == "main") {
                 this->program_entry = fun_def;
                 return;
             }

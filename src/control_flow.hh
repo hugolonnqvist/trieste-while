@@ -63,7 +63,7 @@ namespace whilelang {
             std::shared_ptr<NodeSet> fun_defs,
             std::shared_ptr<NodeSet> fun_calls);
 
-        void add_var(Node ident, std::string tag);
+        void add_var(Node ident);
 
         void add_predecessor(Node node, Node prev);
         void add_predecessor(Node node, NodeSet prev);

@@ -81,15 +81,29 @@ namespace whilelang {
         }
 
         auto fun_id = (curr / FunId) / Ident;
-        return get_identifier(ident) + get_identifier(fun_id);
+        return get_identifier(fun_id) + "-" + get_identifier(ident);
     };
-
-    std::string get_var(const Node ident, const Node fun_def) {
-        return get_identifier(ident) +
-            get_identifier((fun_def / FunId) / Ident);
-    }
 
     Node create_const_node(int value) {
         return Int ^ std::to_string(value);
     };
+
+    void
+    log_var_map(std::shared_ptr<std::map<std::string, std::string>> vars_map) {
+        const int width = 10;
+        std::stringstream str_builder;
+
+        str_builder << std::left << std::setw(width) << "Org Var"
+                    << std::setw(width) << "New Var" << std::endl;
+
+        str_builder << std::endl;
+        str_builder << std::string(width * 3, '-') << std::endl;
+
+        for (const auto &[old_var, new_var] : *vars_map) {
+            str_builder << std::setw(width) << old_var << " -> "
+                        << std::setw(width) << new_var << std::endl;
+        }
+
+        logging::Debug() << str_builder.str();
+    }
 }

@@ -15,7 +15,7 @@ namespace whilelang {
 
     Vars get_atom_defs(Node atom) {
         if (atom / Expr == Ident) {
-            return {get_var(atom / Expr)};
+            return {get_identifier(atom / Expr)};
         }
         return {};
     }
@@ -38,7 +38,7 @@ namespace whilelang {
 
             for (auto arg : *args) {
                 if ((arg / Atom) / Expr == Ident) {
-                    auto var = get_var((arg / Atom) / Expr);
+                    auto var = get_identifier((arg / Atom) / Expr);
                     defs.insert(var);
                 }
             }
@@ -57,7 +57,7 @@ namespace whilelang {
         if (inst == Assign) {
             auto ident = inst / Ident;
             auto aexpr = inst / Rhs;
-            auto var = get_var(ident);
+            auto var = get_identifier(ident);
 
             gen_defs = get_aexpr_defs((inst / Rhs) / Expr);
 
@@ -123,7 +123,7 @@ namespace whilelang {
                                 << (T(Ident)[Ident] * T(AExpr)[AExpr])) >>
                         [=](Match &_) -> Node {
                         cfg->get_instructions();
-                        auto id = get_var(_(Ident));
+                        auto id = get_identifier(_(Ident));
                         auto assign = _(Assign);
 
                         if (set_lattice->out_set[assign].contains(id)) {

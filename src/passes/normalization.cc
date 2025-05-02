@@ -207,7 +207,7 @@ namespace whilelang {
 
             }};
 
-        normalization.post([](Node n) {
+        normalization.post([=](Node n) {
             // Removes the instructions node
             Node program = n / Program;
             if (program->front() == Instructions) {

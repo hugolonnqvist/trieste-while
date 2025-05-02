@@ -63,7 +63,7 @@ namespace whilelang {
             if (expr == Int) {
                 return CPLatticeValue::constant(get_int_value(expr));
             } else if (expr == Ident) {
-                std::string rhs_ident = get_var(expr);
+                std::string rhs_ident = get_identifier(expr);
                 return incoming_state[rhs_ident];
             }
         }
@@ -113,7 +113,7 @@ namespace whilelang {
         auto incoming_state = state_table[inst];
 
         if (inst == Assign) {
-            std::string var = get_var(inst / Ident);
+            std::string var = get_identifier(inst / Ident);
 
             auto expr = (inst / Rhs) / Expr;
             if (expr == Atom) {
@@ -156,19 +156,19 @@ namespace whilelang {
             for (size_t i = 0; i < params->size(); i++) {
                 auto param_id = params->at(i) / Ident;
 
-                auto var_dec = get_var(param_id);
+                auto var_dec = get_identifier(param_id);
                 auto arg = args->at(i) / Atom;
 
                 incoming_state[var_dec] = atom_flow_helper(arg, incoming_state);
             }
         } else if (
             inst == FunDef &&
-            ((inst / FunId) / Ident)->location().view() != "main") {
+            get_identifier((inst / FunId) / Ident) != "main") {
             auto params = inst / ParamList;
 
             auto param_vars = Vars();
             for (auto param : *params) {
-                param_vars.insert(get_var(param / Ident));
+                param_vars.insert(get_identifier(param / Ident));
             }
 
             for (auto &[key, val] : incoming_state) {
@@ -191,8 +191,8 @@ namespace whilelang {
 
         auto atom_is_const = [=](Node inst, Node atom) -> bool {
             if ((atom / Expr) == Ident) {
-                auto lattice_value =
-                    analysis->get_lattice_value(inst, get_var(atom / Expr));
+                auto lattice_value = analysis->get_lattice_value(
+                    inst, get_identifier(atom / Expr));
 
                 return lattice_value.type == CPAbstractType::Constant;
             }
@@ -201,8 +201,8 @@ namespace whilelang {
 
         auto try_atom_to_const = [=](Node inst, Node atom) -> Node {
             if ((atom / Expr) == Ident) {
-                auto lattice_value =
-                    analysis->get_lattice_value(inst, get_var(atom / Expr));
+                auto lattice_value = analysis->get_lattice_value(
+                    inst, get_identifier(atom / Expr));
 
                 if (lattice_value.type == CPAbstractType::Constant) {
                     cfg->set_dirty_flag(true);
@@ -225,7 +225,7 @@ namespace whilelang {
 
                     for (auto arg : *_(ArgList)) {
                         if ((arg / Atom) / Expr == Ident) {
-                            auto var = get_var((arg / Atom) / Expr);
+                            auto var = get_identifier((arg / Atom) / Expr);
 
                             auto lattice_value =
                                 analysis->get_lattice_value(_(FunCall), var);
@@ -256,8 +256,8 @@ namespace whilelang {
                         return NoChange;
                     }
 
-                    auto ident_lattice_val =
-                        analysis->get_lattice_value(inst, get_var(ident));
+                    auto ident_lattice_val = analysis->get_lattice_value(
+                        inst, get_identifier(ident));
 
                     if (ident_lattice_val.type == CPAbstractType::Constant) {
                         return Assign
@@ -325,6 +325,8 @@ namespace whilelang {
             auto first_state = CPLatticeValue::top();
             auto bottom = CPLatticeValue::bottom();
 
+            // cfg->log_instructions();
+            // analysis->log_state_table(cfg->get_instructions());
             analysis->forward_worklist_algoritm(cfg, first_state, bottom);
 
             cfg->log_instructions();
