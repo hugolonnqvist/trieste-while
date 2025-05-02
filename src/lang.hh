@@ -6,7 +6,7 @@ namespace whilelang {
 
     Reader reader();
     Rewriter interpret();
-    Rewriter optimization_analysis(bool &changes);
+    Rewriter optimization_analysis(bool run_zero_analysis);
 
     // Program
     inline const auto Program = TokenDef("program");

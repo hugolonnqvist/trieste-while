@@ -13,6 +13,7 @@ namespace whilelang {
         this->successor = NodeMap<NodeSet>();
         this->fun_call_to_def = NodeMap<Node>();
         this->fun_def_to_calls = NodeMap<NodeSet>();
+		this->dirty_flag = false;
     }
 
     void ControlFlow::add_var(Node ident, std::string tag) {

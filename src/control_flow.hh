@@ -35,6 +35,14 @@ namespace whilelang {
             return vars;
         };
 
+        inline bool is_dirty() {
+            return dirty_flag;
+        }
+
+        void set_dirty_flag(bool new_state) {
+            dirty_flag = new_state;
+        }
+
         void add_instruction(Node inst) {
             instructions.push_back(inst);
         };
@@ -74,6 +82,7 @@ namespace whilelang {
         Node program_entry;
         Nodes instructions;
         Vars vars;
+        bool dirty_flag;
         NodeMap<Node> fun_call_to_def; // Maps fun calls to their declarations
         NodeMap<NodeSet> fun_def_to_calls; // Maps fun defs to their call sites
         NodeMap<NodeSet> predecessor;

@@ -10,7 +10,7 @@ fun main() {
 	var x;
 	var y;
 	x := square(3);
-	y := square(input);
+	y := square(3);
 	output x;
 	output y;
 }

@@ -1,5 +1,4 @@
-# cmake_minimum_required(VERSION 3.14.0)
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.14.0)
 project(while VERSION 0.1.0 LANGUAGES CXX)
 
 include(FetchContent)
@@ -7,7 +6,7 @@ include(FetchContent)
 FetchContent_Declare(
   trieste
   GIT_REPOSITORY https://github.com/microsoft/Trieste
-  GIT_TAG 30986102c54c356346ab6cb1e2d17f43272e0888
+  GIT_TAG c6a6fc0083898429a8dadf5b9085c6faa8f99321 
   )
 
 FetchContent_MakeAvailable(trieste)
@@ -47,10 +46,6 @@ src/passes/expressions.cc
 src/passes/statements.cc
 src/passes/check_refs.cc
 src/passes/normalization.cc
-# src/passes/eval.cc
-# src/passes/gather_control_flow.cc
-# src/passes/zero_analysis.cc
-# src/passes/constant_folding.cc
 )
 
 target_link_libraries(while

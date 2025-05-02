@@ -3,23 +3,25 @@
 namespace whilelang {
     using namespace trieste;
 
-    Rewriter optimization_analysis(bool &changes) {
-        auto control_flow = std::make_shared<ControlFlow>();
+    Rewriter optimization_analysis(bool run_zero_analysis) {
+        auto cfg = std::make_shared<ControlFlow>();
+        auto cfg_is_dirty = [=](Node) { return cfg->is_dirty(); };
+        auto run_zero = [=](Node) { return run_zero_analysis; };
 
         Rewriter rewriter = {
             "optimization_analysis",
             {
-                gather_functions(control_flow),
-                gather_instructions(control_flow),
-                gather_flow_graph(control_flow),
-                // z_analysis(control_flow),
-                constant_folding(control_flow),
+                gather_functions(cfg),
+                gather_instructions(cfg),
+                gather_flow_graph(cfg),
+                z_analysis(cfg).cond(run_zero),
+                constant_folding(cfg),
 
-                gather_functions(control_flow),
-                gather_instructions(control_flow),
-                gather_flow_graph(control_flow),
-                dead_code_elimination(control_flow, changes),
-                dead_code_cleanup(changes),
+                gather_functions(cfg).cond(cfg_is_dirty),
+                gather_instructions(cfg).cond(cfg_is_dirty),
+                gather_flow_graph(cfg).cond(cfg_is_dirty),
+                dead_code_elimination(cfg),
+                dead_code_cleanup(),
             },
             whilelang::normalization_wf,
         };

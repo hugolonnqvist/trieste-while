@@ -22,18 +22,15 @@ namespace whilelang {
                     fun_calls->insert(_(FunCall));
                     return NoChange;
                 },
-                //            T(Return)[Return] >> [=](Match &_) -> Node {
-                //                auto inst = _(Return);
-                //
-                //                while (inst != FunDef) {
-                //                    inst = inst->parent();
-                //                }
-                //                auto fun_id = (inst / FunId) / Ident;
-                //                cfg->add_var(_(Return),
-                //                get_identifier(fun_id));
-                // return NoChange;
-                //            },
             }};
+
+        gather_functions.pre([=](Node) {
+            if (cfg->is_dirty()) {
+                cfg->clear();
+            }
+
+            return 0;
+        });
 
         gather_functions.post([=](Node) {
             cfg->set_functions_calls(fun_defs, fun_calls);
@@ -200,7 +197,8 @@ namespace whilelang {
                     if (_(Post) / Stmt == Assign) {
                         auto ass = _(Post) / Stmt;
                         if ((ass / Rhs) / Expr == FunCall) {
-							// std::cout << "I ACTUALLY DID THIS _____________________________________________________";
+                            // std::cout << "I ACTUALLY DID THIS
+                            // _____________________________________________________";
                             cfg->add_predecessor(ass, last_prevs);
                             cfg->add_successor(last_prevs, ass);
                         }
@@ -208,6 +206,11 @@ namespace whilelang {
                     return NoChange;
                 },
             }};
+        gather_flow_graph.post([=](Node) {
+            cfg->set_dirty_flag(false);
+            return 0;
+        });
+
         return gather_flow_graph;
     }
 }
