@@ -1,0 +1,74 @@
+fun factorial_iterative(n) {
+    var result;
+    var i;
+
+    i := n;
+    result := 1;
+
+    while (1 < i) do {
+        result := result * i;
+        i := i - 1;
+    };
+
+    return result;
+}
+
+fun factorial_recursive(n) {
+	if n < 2 then {
+		return 1;
+	} else {
+		return n * factorial_recursive(n - 1);
+	}
+}
+
+fun fib_iterative(n) {
+    var a;
+    var b;
+	var temp;
+    var i;
+
+    a := 0;
+    b := 1;
+    i := 2;
+
+    while (i < n) do {
+        temp := b;
+        b := a + b;
+        a := temp;
+        i := i + 1;
+    };
+    return b;
+}
+
+fun max(a, b) {
+    if a < b then {
+        return b;
+    } else {
+        return a;
+    }
+}
+
+fun sum_to_n(n) {
+    var sum;
+    var i;
+
+    sum := 0;
+    i := 1;
+
+    while (i < n + 1) do {
+        sum := sum + i;
+        i := i + 1;
+    };
+
+	return sum;
+}
+
+fun main() {
+    output factorial_iterative(4);
+    output factorial_recursive(5);
+    output fib_iterative(10);
+    output max(max(1, 5), 10);
+	output sum_to_n(input);
+	output max(sum_to_n(2), sum_to_n(4));
+}
+

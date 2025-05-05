@@ -44,15 +44,14 @@ namespace whilelang {
         append_to_nodemap(successor, nodes, succ);
     }
 
+    // Fill the map with function calls to their definitions
     void ControlFlow::set_functions_calls(
         std::shared_ptr<NodeSet> fun_defs, std::shared_ptr<NodeSet> fun_calls) {
         for (auto fun_call : *fun_calls) {
-            auto call_id = fun_call / FunId;
-            auto call_id_str = get_identifier(call_id / Ident);
+            auto call_id_str = get_identifier((fun_call / FunId) / Ident);
 
             for (auto fun_def : *fun_defs) {
-                auto fun_def_id = fun_def / FunId;
-                auto fun_def_str = get_identifier(fun_def_id / Ident);
+                auto fun_def_str = get_identifier((fun_def / FunId) / Ident);
                 if (call_id_str == fun_def_str) {
                     append_to_nodemap(fun_def_to_calls, fun_def, fun_call);
                     fun_call_to_def.insert({fun_call, fun_def});

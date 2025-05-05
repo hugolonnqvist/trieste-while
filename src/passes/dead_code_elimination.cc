@@ -76,31 +76,31 @@ namespace whilelang {
         return new_defs;
     };
 
+    std::optional<bool> get_bexpr_value(Node bexpr) {
+        auto expr = bexpr / Expr;
+        if (expr->type().in({True, False})) {
+            return expr == True ? true : false;
+        } else if (expr->type().in({LT, Equals})) {
+            auto lhs = (expr / Lhs) / Expr;
+            auto rhs = (expr / Rhs) / Expr;
+
+            if (lhs == Int && rhs == Int) {
+                if (expr == LT) {
+                    return get_int_value(lhs) < get_int_value(rhs);
+                } else {
+                    return get_int_value(lhs) == get_int_value(rhs);
+                }
+            }
+            return std::nullopt;
+        } else if (expr == Not) {
+            return !get_bexpr_value(expr / Expr);
+        } else {
+            return std::nullopt;
+        }
+    };
+
     PassDef dead_code_elimination(std::shared_ptr<ControlFlow> cfg) {
         auto set_lattice = std::make_shared<SetLattice>();
-
-        // Return bool value of bexpr if it can be calculated,
-        // otherwise returns std::nullopt
-        auto get_bexpr_value = [](Node bexpr) -> std::optional<bool> {
-            auto expr = bexpr / Expr;
-            if (expr->type().in({True, False})) {
-                return expr == True ? true : false;
-            } else if (expr->type().in({LT, Equals})) {
-                auto lhs = (expr / Lhs) / Expr;
-                auto rhs = (expr / Rhs) / Expr;
-
-                if (lhs == Int && rhs == Int) {
-                    if (expr == LT) {
-                        return get_int_value(lhs) < get_int_value(rhs);
-                    } else {
-                        return get_int_value(lhs) == get_int_value(rhs);
-                    }
-                }
-                return std::nullopt;
-            } else {
-                return std::nullopt;
-            }
-        };
 
         PassDef dead_code_elimination =
             {
@@ -211,8 +211,6 @@ namespace whilelang {
                     }
                 }
             }
-            cfg->log_instructions();
-            set_lattice->log(instructions);
 
             return 0;
         });

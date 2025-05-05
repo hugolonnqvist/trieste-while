@@ -325,12 +325,10 @@ namespace whilelang {
             auto first_state = CPLatticeValue::top();
             auto bottom = CPLatticeValue::bottom();
 
-            // cfg->log_instructions();
-            // analysis->log_state_table(cfg->get_instructions());
             analysis->forward_worklist_algoritm(cfg, first_state, bottom);
 
-            cfg->log_instructions();
-            analysis->log_state_table(cfg->get_instructions());
+            // cfg->log_instructions();
+            // analysis->log_state_table(cfg->get_instructions());
 
             return 0;
         });

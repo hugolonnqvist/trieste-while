@@ -17,6 +17,7 @@ src/parser.cc
 src/reader.cc
 src/interpreter.cc
 src/optimization_analysis.cc
+src/statistics_rewriter.cc
 
 src/utils.cc
 src/control_flow.cc
@@ -32,6 +33,8 @@ src/passes/gather_control_flow.cc
 src/passes/zero_analysis.cc
 src/passes/constant_folding.cc
 src/passes/dead_code_elimination.cc
+
+src/passes/gather_stats.cc
 )
 
 add_executable(while_trieste

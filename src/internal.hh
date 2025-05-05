@@ -31,6 +31,9 @@ namespace whilelang {
     PassDef dead_code_elimination(std::shared_ptr<ControlFlow> cfg);
     PassDef dead_code_cleanup();
 
+	// Statistics
+    PassDef gather_stats(std::shared_ptr<Nodes> instructions);
+
     // clang-format off
 	inline const auto parse_token =
 		Skip |

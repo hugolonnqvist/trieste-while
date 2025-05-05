@@ -7,7 +7,7 @@ namespace whilelang {
 
     Reader
     reader(std::shared_ptr<std::map<std::string, std::string>> vars_map) {
-        Reader reader = {
+        return {
             "while",
             {
                 // Parsing
@@ -26,7 +26,5 @@ namespace whilelang {
             },
             whilelang::parser(),
         };
-
-        return reader;
     }
 }

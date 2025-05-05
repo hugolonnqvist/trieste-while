@@ -65,11 +65,6 @@ namespace whilelang {
                     // Gather variables
                     if (inst->type() == Assign) {
                         auto ident = inst / Ident;
-
-                        while (inst != FunDef) {
-                            inst = inst->parent();
-                        }
-                        auto fun_id = (inst / FunId) / Ident;
                         cfg->add_var(ident);
                     }
 
@@ -78,15 +73,7 @@ namespace whilelang {
 
                 (T(Atom) / T(Param))[Expr] << T(Ident)[Ident] >>
                     [=](Match &_) -> Node {
-                    auto curr = _(Expr);
-                    auto ident = _(Ident);
-
-                    while (curr != FunDef) {
-                        curr = curr->parent();
-                    }
-                    auto fun_id = (curr / FunId) / Ident;
-                    cfg->add_var(ident);
-
+                    cfg->add_var(_(Ident));
                     return NoChange;
                 },
 
