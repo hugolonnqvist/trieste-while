@@ -92,13 +92,13 @@ namespace whilelang {
 
     State zero_flow(
         Node inst,
-        NodeMap<State> state_table,
+        std::unordered_map<Node, State> state_table,
         std::shared_ptr<ControlFlow> cfg) {
         auto incoming_state = state_table[inst];
         if (inst == Assign) {
             auto var = get_identifier(inst / Ident);
             Node rhs = (inst / Rhs) / Expr;
-			std::cout << "Var" << var << std::endl;
+            std::cout << "Var" << var << std::endl;
 
             if (rhs == Atom) {
                 auto atom = rhs / Expr;

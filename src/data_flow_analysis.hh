@@ -9,10 +9,12 @@ namespace whilelang {
     template<typename LatticeValue>
     class DataFlowAnalysis {
       public:
-        using State = std::map<std::string, LatticeValue>;
+        using State = std::unordered_map<std::string, LatticeValue>;
         using JoinFn = std::function<LatticeValue(LatticeValue, LatticeValue)>;
         using FlowFn = std::function<State(
-            Node, NodeMap<State>, std::shared_ptr<ControlFlow>)>;
+            Node,
+            std::unordered_map<Node, State>,
+            std::shared_ptr<ControlFlow>)>;
 
         DataFlowAnalysis(JoinFn join_fn, FlowFn flow_fn);
 
@@ -21,6 +23,7 @@ namespace whilelang {
         LatticeValue get_lattice_value(Node inst, std::string var);
 
         State join(const State x, const State y);
+        bool join_mut(State &x, const State y);
 
         void set_state(const Node inst, LatticeValue value);
 
@@ -32,7 +35,7 @@ namespace whilelang {
         void log_state_table(const Nodes instructions);
 
       private:
-        NodeMap<State> state_table;
+        std::unordered_map<Node, State> state_table;
         JoinFn join_fn;
         FlowFn flow_fn;
 
@@ -59,7 +62,7 @@ namespace whilelang {
 
     template<typename LatticeValue>
     DataFlowAnalysis<LatticeValue>::DataFlowAnalysis(JoinFn join, FlowFn flow) {
-        this->state_table = NodeMap<State>();
+        this->state_table = std::unordered_map<Node, State>();
         this->join_fn = join;
         this->flow_fn = flow;
     }
@@ -91,25 +94,37 @@ namespace whilelang {
     template<typename LatticeValue>
     typename DataFlowAnalysis<LatticeValue>::State
     DataFlowAnalysis<LatticeValue>::join(const State x, const State y) {
-        if (x.size() != y.size()) {
-            throw std::runtime_error("State sizes do not match");
-        }
+        State result_state = x;
 
-        State result_state = State();
-
-        for (auto it1 = x.begin(), it2 = y.begin();
-             it1 != x.end() && it2 != y.end();
-             ++it1, ++it2) {
-            const auto &[key1, val1] = *it1;
-            const auto &[key2, val2] = *it2;
-
-            if (key1 != key2) {
-                throw std::runtime_error("State keys do not match");
+        for (const auto &[key, val_y] : y) {
+            auto res = result_state.find(key);
+            if (res != result_state.end()) {
+                auto val_x = res->second;
+                result_state[key] = join_fn(val_x, val_y);
+            } else {
+                throw std::runtime_error("State do not have the same keys");
             }
-
-            result_state[key1] = join_fn(val1, val2);
         }
         return result_state;
+    }
+
+    template<typename LatticeValue>
+    bool DataFlowAnalysis<LatticeValue>::join_mut(State &x, const State y) {
+        bool changed = false;
+        for (const auto &[key, val_y] : y) {
+            auto res = x.find(key);
+            if (res != x.end()) {
+                auto val_x = res->second;
+                auto join_res = join_fn(val_x, val_y);
+                if (!(val_x == join_res)) {
+                    x[key] = join_res;
+                    changed = true;
+                }
+            } else {
+                throw std::runtime_error("State do not have the same keys");
+            }
+        }
+        return changed;
     }
 
     template<typename LatticeValue>
@@ -165,11 +180,10 @@ namespace whilelang {
             state_table[inst] = out_state;
 
             for (Node succ : cfg->successors(inst)) {
-                State succ_state = state_table[succ];
-                State new_succ_state = this->join(out_state, succ_state);
+                State &succ_state = state_table[succ];
+                bool changed = this->join_mut(succ_state, out_state);
 
-                if (!state_equals(new_succ_state, succ_state)) {
-                    state_table[succ] = new_succ_state;
+                if (changed) {
                     worklist.push_back(succ);
                 }
             }

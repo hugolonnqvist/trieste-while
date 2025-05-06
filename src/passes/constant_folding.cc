@@ -108,7 +108,7 @@ namespace whilelang {
 
     State cp_flow(
         Node inst,
-        NodeMap<State> state_table,
+        std::unordered_map<Node, State> state_table,
         std::shared_ptr<ControlFlow> cfg) {
         auto incoming_state = state_table[inst];
 
