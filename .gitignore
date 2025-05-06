@@ -4,3 +4,4 @@ build
 .cache
 *.out
 examples/generated.while
+stats_result.txt
