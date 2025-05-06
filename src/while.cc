@@ -53,8 +53,6 @@ int main(int argc, char const *argv[]) {
         auto instuctions_pre = std::make_shared<trieste::Nodes>();
         result >> whilelang::statistics_rewriter(instuctions_pre);
 
-        start_time = std::chrono::steady_clock::now();
-
         if (run_static_analysis) {
             do {
                 result = result >>
@@ -62,9 +60,6 @@ int main(int argc, char const *argv[]) {
             } while (result.ok && result.total_changes > 0 &&
                      !program_empty(result.ast));
         }
-        auto analysis_duration =
-            std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - start_time);
 
         if (run)
             result = result >> whilelang::interpret();
@@ -86,8 +81,6 @@ int main(int argc, char const *argv[]) {
         trieste::logging::Debug()
             << "Parse time (init parse up and including normalization): "
             << parse_duration << "\n"
-            << "Static analysis time (starting post normalization): "
-            << analysis_duration << "\n"
             << "The number of instructions post normalization are: "
             << instuctions_pre->size() << "\n"
             << "The number of instructions remaining are: "

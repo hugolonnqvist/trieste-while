@@ -216,7 +216,6 @@ namespace whilelang {
                 program->pop_back();
                 program->push_back(*inst);
             }
-            logging::Debug() << "AST post normalization:\n" << n;
 
             return 0;
         });

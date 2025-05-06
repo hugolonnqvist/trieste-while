@@ -92,13 +92,6 @@ namespace whilelang {
     typename DataFlowAnalysis<LatticeValue>::State
     DataFlowAnalysis<LatticeValue>::join(const State x, const State y) {
         if (x.size() != y.size()) {
-            for (auto &[key, val] : x) {
-                logging::Debug() << key << " " << val;
-            }
-            logging::Debug() << "-----------------";
-            for (auto &[key, val] : y) {
-                logging::Debug() << key << " " << val;
-            }
             throw std::runtime_error("State sizes do not match");
         }
 
@@ -168,9 +161,7 @@ namespace whilelang {
             Node inst = worklist.front();
             worklist.pop_front();
 
-            State in_state = state_table[inst];
             State out_state = flow_fn(inst, state_table, cfg);
-
             state_table[inst] = out_state;
 
             for (Node succ : cfg->successors(inst)) {
