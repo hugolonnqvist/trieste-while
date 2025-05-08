@@ -56,7 +56,7 @@ namespace whilelang {
 
     using State = typename DataFlowAnalysis<CPLatticeValue>::State;
 
-    CPLatticeValue atom_flow_helper(Node inst, State incoming_state) {
+    inline CPLatticeValue atom_flow_helper(Node inst, State incoming_state) {
         if (inst == Atom) {
             Node expr = inst / Expr;
 
@@ -71,7 +71,7 @@ namespace whilelang {
         return CPLatticeValue::top();
     }
 
-    auto apply_op = [](Node op, int x, int y) {
+    inline auto apply_arith_op = [](Node op, int x, int y) {
         if (op == Add) {
             return x + y;
         } else if (op == Sub) {
@@ -85,7 +85,7 @@ namespace whilelang {
         }
     };
 
-    CPLatticeValue cp_join(CPLatticeValue x, CPLatticeValue y) {
+    inline CPLatticeValue cp_join(CPLatticeValue x, CPLatticeValue y) {
         CPAbstractType top = CPAbstractType::Top;
         CPAbstractType constant = CPAbstractType::Constant;
         CPAbstractType bottom = CPAbstractType::Bottom;
@@ -106,7 +106,7 @@ namespace whilelang {
         return CPLatticeValue::top();
     }
 
-    State cp_flow(
+    inline State cp_flow(
         Node inst,
         std::unordered_map<Node, State> state_table,
         std::shared_ptr<ControlFlow> cfg) {
@@ -128,7 +128,7 @@ namespace whilelang {
                 if (lhs_value.type == CPAbstractType::Constant &&
                     rhs_value.type == CPAbstractType::Constant) {
                     auto op_result =
-                        apply_op(expr, *lhs_value.value, *rhs_value.value);
+                        apply_arith_op(expr, *lhs_value.value, *rhs_value.value);
                     incoming_state[var] = CPLatticeValue::constant(op_result);
                 } else {
                     incoming_state[var] = CPLatticeValue::top();

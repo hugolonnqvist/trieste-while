@@ -263,7 +263,7 @@ def main():
     print(f"Generated program saved to {path}")
 
     try:
-        subprocess.run(["./build/while", "-s",
+        subprocess.run(["./build/while", "-s", "-p",
                        path, "-l" "Debug"], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error running analyzer: {e}")

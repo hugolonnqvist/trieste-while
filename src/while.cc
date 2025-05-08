@@ -20,6 +20,7 @@ int main(int argc, char const *argv[]) {
     bool run = false;
     bool run_static_analysis = false;
     bool run_zero_analysis = false;
+    bool run_gather_stats = false;
     app.add_flag("-r,--run", run, "Run the program (prompting inputs).");
     app.add_flag(
         "-s,--static-analysis",
@@ -30,6 +31,12 @@ int main(int argc, char const *argv[]) {
         run_zero_analysis,
         "Enable zero analysis in the static analysis. ");
 
+    app.add_flag(
+        "-p, --print-stats",
+        run_gather_stats,
+        "Runs the gather stats pass displaying total instructions and "
+        "variables after normalization. Needed for the ./stats.sh script.");
+
     try {
         app.parse(argc, argv);
     } catch (const CLI::ParseError &e) {
@@ -37,21 +44,15 @@ int main(int argc, char const *argv[]) {
     }
 
     auto vars_map = std::make_shared<std::map<std::string, std::string>>();
-    auto reader = whilelang::reader(vars_map).file(input_path);
+    auto reader =
+        whilelang::reader(vars_map, run_gather_stats).file(input_path);
 
     try {
-        auto start_time = std::chrono::steady_clock::now();
-        auto result = reader.read();
-        auto parse_duration =
-            std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - start_time);
-
         auto program_empty = [](trieste::Node ast) -> bool {
             return ast->front()->empty();
         };
 
-        auto instuctions_pre = std::make_shared<trieste::Nodes>();
-        result >> whilelang::statistics_rewriter(instuctions_pre);
+        auto result = reader.read();
 
         if (run_static_analysis) {
             do {
@@ -75,16 +76,6 @@ int main(int argc, char const *argv[]) {
                                   << result.ast;
 
         whilelang::log_var_map(vars_map);
-        auto instuctions_post = std::make_shared<trieste::Nodes>();
-        result >> whilelang::statistics_rewriter(instuctions_post);
-
-        trieste::logging::Debug()
-            << "Parse time (init parse up and including normalization): "
-            << parse_duration << "\n"
-            << "The number of instructions post normalization are: "
-            << instuctions_pre->size() << "\n"
-            << "The number of instructions remaining are: "
-            << instuctions_post->size() << "\n";
 
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';

@@ -1,12 +1,11 @@
-#include "control_flow.hh"
 #include "internal.hh"
-#include "utils.hh"
 
 namespace whilelang {
     using namespace trieste;
 
-    Reader
-    reader(std::shared_ptr<std::map<std::string, std::string>> vars_map) {
+    Reader reader(
+        std::shared_ptr<std::map<std::string, std::string>> vars_map,
+        bool run_stats) {
         return {
             "while",
             {
@@ -23,6 +22,9 @@ namespace whilelang {
 
                 // Normalization
                 normalization(),
+
+                // Used for perfomance analysis
+                gather_stats().cond([=](Node) { return run_stats; }),
             },
             whilelang::parser(),
         };

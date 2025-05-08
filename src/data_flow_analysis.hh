@@ -114,9 +114,8 @@ namespace whilelang {
         for (const auto &[key, val_y] : y) {
             auto res = x.find(key);
             if (res != x.end()) {
-                auto val_x = res->second;
-                auto join_res = join_fn(val_x, val_y);
-                if (!(val_x == join_res)) {
+                auto join_res = join_fn(res->second, val_y);
+                if (!(res->second == join_res)) {
                     x[key] = join_res;
                     changed = true;
                 }

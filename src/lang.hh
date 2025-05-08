@@ -4,7 +4,7 @@
 namespace whilelang {
     using namespace trieste;
 
-    Reader reader(std::shared_ptr<std::map<std::string, std::string>> vars_map);
+    Reader reader(std::shared_ptr<std::map<std::string, std::string>> vars_map, bool run_stats);
     Rewriter interpret();
     Rewriter optimization_analysis(bool run_zero_analysis);
     Rewriter statistics_rewriter(std::shared_ptr<Nodes> instructions);

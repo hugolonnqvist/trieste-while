@@ -19,6 +19,9 @@ namespace whilelang {
     // Evaluation
     PassDef eval();
 
+	// For performance testing
+    PassDef gather_stats();
+
     // Pre static analysis
     PassDef normalization();
     PassDef gather_functions(std::shared_ptr<ControlFlow> cfg);
@@ -30,9 +33,6 @@ namespace whilelang {
     PassDef constant_folding(std::shared_ptr<ControlFlow> cfg);
     PassDef dead_code_elimination(std::shared_ptr<ControlFlow> cfg);
     PassDef dead_code_cleanup();
-
-	// Statistics
-    PassDef gather_stats(std::shared_ptr<Nodes> instructions);
 
     // clang-format off
 	inline const auto parse_token =
