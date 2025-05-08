@@ -1,8 +1,6 @@
 #pragma once
 #include "control_flow.hh"
-#include "data_flow_analysis.hh"
 #include "lang.hh"
-#include "utils.hh"
 
 namespace whilelang {
     using namespace trieste;

@@ -1,4 +1,5 @@
-#include "data_flow_analysis.hh"
+#include "dataflow_analysis.hh"
+#include "utils.hh"
 
 namespace whilelang {
     using namespace trieste;

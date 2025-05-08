@@ -1,4 +1,11 @@
-x := 1 + 2;
-y := 9 - x;
-z := x + y;
-if (z < y) then { output z } else {output y}; 
+fun main() {
+	var x; var y; var z;
+	x := 1 + 2;
+	y := 9 - x;
+	z := x + y;
+	if (z < y) then { 
+		output z 
+	} else {
+		output y
+	}; 
+}

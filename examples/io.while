@@ -1,5 +1,8 @@
-x := input;
-y := x + input;
-output x + y;
+fun main() {
+	var x; var y;
+	x := input;
+	y := x + input;
+	output x + y;
+}
 
 

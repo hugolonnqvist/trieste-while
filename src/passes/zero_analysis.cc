@@ -1,5 +1,5 @@
 #include "../control_flow.hh"
-#include "../data_flow_analysis.hh"
+#include "../dataflow_analysis.hh"
 #include "../internal.hh"
 #include "../utils.hh"
 
@@ -48,7 +48,16 @@ namespace whilelang {
         }
     };
 
-    using State = typename DataFlowAnalysis<ZeroLatticeValue>::State;
+    using State = std::unordered_map<std::string, ZeroLatticeValue>;
+
+    State zero_create_state(Vars vars) {
+        State state = State();
+
+        for (auto var : vars) {
+            state[var] = ZeroLatticeValue::bottom();
+        }
+        return state;
+    }
 
     auto handle_atom = [](const Node atom,
                           State &incoming_state) -> ZeroLatticeValue {
@@ -136,18 +145,21 @@ namespace whilelang {
     }
 
     PassDef z_analysis(std::shared_ptr<ControlFlow> cfg) {
-        auto analysis = std::make_shared<DataFlowAnalysis<ZeroLatticeValue>>(
-            zero_join, zero_flow);
+        auto analysis =
+            std::make_shared<DataFlowAnalysis<State, ZeroLatticeValue>>(
+                zero_create_state, zero_join, zero_flow);
 
         PassDef z_analysis = {
             "z_analysis", normalization_wf, dir::topdown | dir::once, {}};
 
         z_analysis.post([=](Node) {
-            auto first_state = ZeroLatticeValue::top();
-            auto bottom = ZeroLatticeValue::bottom();
+            auto first_state = State();
 
-            cfg->log_instructions();
-            analysis->forward_worklist_algoritm(cfg, first_state, bottom);
+            for (auto var : cfg->get_vars()) {
+                first_state[var] = ZeroLatticeValue::top();
+            }
+
+            analysis->forward_worklist_algoritm(cfg, first_state);
 
             cfg->log_instructions();
             analysis->log_state_table(cfg->get_instructions());

@@ -1,5 +1,8 @@
-{skip};
-{{x := 1}};
-{y := (x + 1)};
-{z := 2 * (y + 1)};
-{skip; a := 1}; {b := 2; skip}
+fun main() {
+	var x; var y; var z; var a; var b;
+	{skip};
+	{{x := 1}};
+	{y := (x + 1)};
+	{z := 2 * (y + 1)};
+	{skip; a := 1}; {b := 2; skip}
+}

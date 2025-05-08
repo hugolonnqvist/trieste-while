@@ -1,7 +1,11 @@
-a := 1;
-while true do {
-	wh :=1;
-	wh :=2;
-	wh :=3;
-};
-a := 2;
+fun main() {
+	var a; var wh;
+	a := 1;
+	while true do {
+		wh :=1;
+		wh :=2;
+		wh :=3;
+	};
+	a := 2;
+	output a;
+}

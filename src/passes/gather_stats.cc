@@ -1,4 +1,6 @@
 #include "../internal.hh"
+#include "../utils.hh"
+
 namespace whilelang {
 
     using namespace trieste;

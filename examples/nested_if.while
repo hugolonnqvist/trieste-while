@@ -1,3 +1,7 @@
-{if true then if true then x := 1 else x := 1 else x := 2};
-{if true then if true then if true then x := 1 else x := 1 else x := 2 else x := 3};
-{if true then if true then if true then if true then x := 1 else x := 1 else x := 2 else x := 3 else x := 4};
+fun main() {
+	var x;
+	{if true then if true then x := 1 else x := 1 else x := 2};
+	{if true then if true then if true then x := 1 else x := 1 else x := 2 else x := 3};
+	{if true then if true then if true then if true then x := 1 else x := 1 else x := 2 else x := 3 else x := 4};
+	output x;
+}

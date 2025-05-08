@@ -1,5 +1,5 @@
-#include "../data_flow_analysis.hh"
 #include "../internal.hh"
+#include "../utils.hh"
 #include "../set_lattice.hh"
 
 namespace whilelang {

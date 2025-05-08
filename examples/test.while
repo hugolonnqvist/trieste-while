@@ -1,6 +1,0 @@
-fun main() {
-	var x;
-	x:=2;
-	var x;
-	output x;
-}

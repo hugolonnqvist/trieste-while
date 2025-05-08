@@ -1,9 +1,0 @@
-a := 0;
-while true do {
-  if a = 1 then {
-    b := a;
-    a := b;
-  } else {
-    a := b;
-  }
-}

@@ -1,41 +1,35 @@
 #pragma once
 #include "control_flow.hh"
-#include "lang.hh"
 #include "utils.hh"
 
 namespace whilelang {
     using namespace trieste;
 
-    template<typename LatticeValue>
+    template<typename State, typename LatticeValue>
     class DataFlowAnalysis {
       public:
-        using State = std::unordered_map<std::string, LatticeValue>;
+        using StateTable = std::unordered_map<Node, State>;
+        using CreateStateFn = std::function<State(Vars)>;
         using JoinFn = std::function<LatticeValue(LatticeValue, LatticeValue)>;
         using FlowFn = std::function<State(
-            Node,
-            std::unordered_map<Node, State>,
-            std::shared_ptr<ControlFlow>)>;
+            Node, StateTable, std::shared_ptr<ControlFlow>)>;
 
-        DataFlowAnalysis(JoinFn join_fn, FlowFn flow_fn);
-
-        State create_state(Vars vars, LatticeValue value);
+        DataFlowAnalysis(
+            CreateStateFn create_state_fn, JoinFn join_fn, FlowFn flow_fn);
 
         LatticeValue get_lattice_value(Node inst, std::string var);
 
         State join(const State x, const State y);
         bool join_mut(State &x, const State y);
 
-        void set_state(const Node inst, LatticeValue value);
-
         void forward_worklist_algoritm(
-            std::shared_ptr<ControlFlow> control_flow,
-            LatticeValue first_state,
-            LatticeValue bottom);
+            std::shared_ptr<ControlFlow> control_flow, State first_state);
 
         void log_state_table(const Nodes instructions);
 
       private:
-        std::unordered_map<Node, State> state_table;
+        StateTable state_table;
+        CreateStateFn create_state_fn;
         JoinFn join_fn;
         FlowFn flow_fn;
 
@@ -45,55 +39,54 @@ namespace whilelang {
             const Nodes instructions,
             const Vars vars,
             const Node program_entry,
-            LatticeValue first_state,
-            LatticeValue bottom);
+            State first_state);
     };
 
-    template<typename LatticeValue>
-    typename DataFlowAnalysis<LatticeValue>::State
-    DataFlowAnalysis<LatticeValue>::create_state(
-        Vars vars, LatticeValue value) {
-        State state = State();
-        for (auto var : vars) {
-            state[var] = value;
-        }
-        return state;
-    }
+    // template<typename State, typename LatticeValue>
+    // State DataFlowAnalysis<State, LatticeValue>::create_state(
+    //     Vars vars, LatticeValue value) {
+    //     State state = State();
+    //     for (auto var : vars) {
+    //         state[var] = value;
+    //     }
+    //     return state;
+    // }
 
-    template<typename LatticeValue>
-    DataFlowAnalysis<LatticeValue>::DataFlowAnalysis(JoinFn join, FlowFn flow) {
-        this->state_table = std::unordered_map<Node, State>();
+    template<typename State, typename LatticeValue>
+    DataFlowAnalysis<State, LatticeValue>::DataFlowAnalysis(
+        CreateStateFn create_state, JoinFn join, FlowFn flow) {
+        this->state_table = StateTable();
+        this->create_state_fn = create_state;
         this->join_fn = join;
         this->flow_fn = flow;
     }
 
-    template<typename LatticeValue>
-    void DataFlowAnalysis<LatticeValue>::init(
+    template<typename State, typename LatticeValue>
+    void DataFlowAnalysis<State, LatticeValue>::init(
         const Nodes instructions,
         const Vars vars,
         const Node program_entry,
-        LatticeValue first_state,
-        LatticeValue bottom) {
+        State first_state) {
         if (instructions.empty()) {
             throw std::runtime_error("No instructions exist for this program");
         }
 
         for (auto inst : instructions) {
-            state_table.insert({inst, create_state(vars, bottom)});
+            state_table.insert({inst, this->create_state_fn(vars)});
         }
 
-        set_state(program_entry, first_state);
+        state_table[program_entry] = first_state;
     }
 
-    template<typename LatticeValue>
-    LatticeValue DataFlowAnalysis<LatticeValue>::get_lattice_value(
+    template<typename State, typename LatticeValue>
+    LatticeValue DataFlowAnalysis<State, LatticeValue>::get_lattice_value(
         Node inst, std::string var) {
         return state_table[inst][var];
     }
 
-    template<typename LatticeValue>
-    typename DataFlowAnalysis<LatticeValue>::State
-    DataFlowAnalysis<LatticeValue>::join(const State x, const State y) {
+    template<typename State, typename LatticeValue>
+    State
+    DataFlowAnalysis<State, LatticeValue>::join(const State x, const State y) {
         State result_state = x;
 
         for (const auto &[key, val_y] : y) {
@@ -108,8 +101,9 @@ namespace whilelang {
         return result_state;
     }
 
-    template<typename LatticeValue>
-    bool DataFlowAnalysis<LatticeValue>::join_mut(State &x, const State y) {
+    template<typename State, typename LatticeValue>
+    bool
+    DataFlowAnalysis<State, LatticeValue>::join_mut(State &x, const State y) {
         bool changed = false;
         for (const auto &[key, val_y] : y) {
             auto res = x.find(key);
@@ -126,50 +120,38 @@ namespace whilelang {
         return changed;
     }
 
-    template<typename LatticeValue>
-    void DataFlowAnalysis<LatticeValue>::set_state(
-        const Node inst, LatticeValue value) {
-        State new_state = State();
+    // template<typename State, typename LatticeValue>
+    // bool DataFlowAnalysis<State, LatticeValue>::state_equals(State x, State
+    // y) {
+    //     if (x.size() != y.size()) {
+    //         throw std::runtime_error("State sizes do not match");
+    //     }
+    //
+    //     for (auto it1 = x.begin(), it2 = y.begin();
+    //          it1 != x.end() && it2 != y.end();
+    //          ++it1, ++it2) {
+    //         auto [key1, val1] = *it1;
+    //         auto [key2, val2] = *it2;
+    //
+    //         if (key1 != key2) {
+    //             throw std::runtime_error("State keys do not match");
+    //         }
+    //
+    //         if (val1 != val2) {
+    //             return false;
+    //         }
+    //     }
+    //     return true;
+    // }
 
-        for (auto &[_, old_st] : state_table[inst]) {
-            old_st = value;
-        }
-    }
-
-    template<typename LatticeValue>
-    bool DataFlowAnalysis<LatticeValue>::state_equals(State x, State y) {
-        if (x.size() != y.size()) {
-            throw std::runtime_error("State sizes do not match");
-        }
-
-        for (auto it1 = x.begin(), it2 = y.begin();
-             it1 != x.end() && it2 != y.end();
-             ++it1, ++it2) {
-            auto [key1, val1] = *it1;
-            auto [key2, val2] = *it2;
-
-            if (key1 != key2) {
-                throw std::runtime_error("State keys do not match");
-            }
-
-            if (val1 != val2) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    template<typename LatticeValue>
-    void DataFlowAnalysis<LatticeValue>::forward_worklist_algoritm(
-        std::shared_ptr<ControlFlow> cfg,
-        LatticeValue first_state,
-        LatticeValue bottom) {
+    template<typename State, typename LatticeValue>
+    void DataFlowAnalysis<State, LatticeValue>::forward_worklist_algoritm(
+        std::shared_ptr<ControlFlow> cfg, State first_state) {
         const auto instructions = cfg->get_instructions();
         const Vars vars = cfg->get_vars();
 
         std::deque<Node> worklist{cfg->get_program_entry()};
-        this->init(
-            instructions, vars, cfg->get_program_entry(), first_state, bottom);
+        this->init(instructions, vars, cfg->get_program_entry(), first_state);
 
         while (!worklist.empty()) {
             Node inst = worklist.front();
@@ -189,9 +171,9 @@ namespace whilelang {
         }
     }
 
-    template<typename LatticeValue>
-    void
-    DataFlowAnalysis<LatticeValue>::log_state_table(const Nodes instructions) {
+    template<typename State, typename LatticeValue>
+    void DataFlowAnalysis<State, LatticeValue>::log_state_table(
+        const Nodes instructions) {
         const int width = 15;
         const int number_of_vars = state_table[instructions[0]].size();
         std::stringstream str_builder;

@@ -1,3 +1,4 @@
+#include "../dataflow_analysis.hh"
 #include "../internal.hh"
 #include "../utils.hh"
 
@@ -54,7 +55,16 @@ namespace whilelang {
         }
     };
 
-    using State = typename DataFlowAnalysis<CPLatticeValue>::State;
+    using State = std::unordered_map<std::string, CPLatticeValue>;
+
+    State cp_create_state(Vars vars) {
+        State state = State();
+
+        for (auto var : vars) {
+            state[var] = CPLatticeValue::bottom();
+        }
+        return state;
+    }
 
     inline CPLatticeValue atom_flow_helper(Node inst, State incoming_state) {
         if (inst == Atom) {
@@ -127,8 +137,8 @@ namespace whilelang {
 
                 if (lhs_value.type == CPAbstractType::Constant &&
                     rhs_value.type == CPAbstractType::Constant) {
-                    auto op_result =
-                        apply_arith_op(expr, *lhs_value.value, *rhs_value.value);
+                    auto op_result = apply_arith_op(
+                        expr, *lhs_value.value, *rhs_value.value);
                     incoming_state[var] = CPLatticeValue::constant(op_result);
                 } else {
                     incoming_state[var] = CPLatticeValue::top();
@@ -181,8 +191,9 @@ namespace whilelang {
     }
 
     PassDef constant_folding(std::shared_ptr<ControlFlow> cfg) {
-        auto analysis = std::make_shared<DataFlowAnalysis<CPLatticeValue>>(
-            cp_join, cp_flow);
+        auto analysis =
+            std::make_shared<DataFlowAnalysis<State, CPLatticeValue>>(
+                cp_create_state, cp_join, cp_flow);
 
         auto ident_to_const = [=](int value) -> Node {
             cfg->set_dirty_flag(true);
@@ -252,6 +263,7 @@ namespace whilelang {
                     auto ident = _(Ident);
                     auto aexpr = _(AExpr);
 
+                    // Integers remain unchanged
                     if (aexpr / Expr == Atom && (aexpr / Expr) / Expr == Int) {
                         return NoChange;
                     }
@@ -322,10 +334,13 @@ namespace whilelang {
 
         // clang-format on
         constant_folding.pre([=](Node) {
-            auto first_state = CPLatticeValue::top();
-            auto bottom = CPLatticeValue::bottom();
+            auto first_state = State();
 
-            analysis->forward_worklist_algoritm(cfg, first_state, bottom);
+            for (auto var : cfg->get_vars()) {
+                first_state[var] = CPLatticeValue::top();
+            }
+
+            analysis->forward_worklist_algoritm(cfg, first_state);
 
             // cfg->log_instructions();
             // analysis->log_state_table(cfg->get_instructions());
