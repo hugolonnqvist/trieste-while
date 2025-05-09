@@ -108,8 +108,10 @@ namespace whilelang {
 
     inline bool zero_state_join(State &x, const State &y) {
         bool changed = false;
+
         for (const auto &[key, val_y] : y) {
             auto res = x.find(key);
+
             if (res != x.end()) {
                 auto join_res = lattice_join(res->second, val_y);
                 if (!(res->second == join_res)) {
@@ -131,7 +133,6 @@ namespace whilelang {
         if (inst == Assign) {
             auto var = get_identifier(inst / Ident);
             Node rhs = (inst / Rhs) / Expr;
-            std::cout << "Var" << var << std::endl;
 
             if (rhs == Atom) {
                 auto atom = rhs / Expr;

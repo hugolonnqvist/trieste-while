@@ -29,7 +29,6 @@ namespace whilelang {
             if (cfg->is_dirty()) {
                 cfg->clear();
             }
-
             return 0;
         });
 
@@ -185,8 +184,6 @@ namespace whilelang {
                     if (_(Post) / Stmt == Assign) {
                         auto ass = _(Post) / Stmt;
                         if ((ass / Rhs) / Expr == FunCall) {
-                            // std::cout << "I ACTUALLY DID THIS
-                            // _____________________________________________________";
                             cfg->add_predecessor(ass, last_prevs);
                             cfg->add_successor(last_prevs, ass);
                         }
