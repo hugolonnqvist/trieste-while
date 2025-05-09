@@ -6,8 +6,10 @@
 # Feel free reformat this
 
 function gather_data() {
+	local divisor=${1}
+
 	cat tmp.txt | awk '!/Starting/ && (/INST POST NORM:/ || /VARS POST NORM:/ || /functions/ || /expressions/ || /statements/ || /check_refs/ || /unique_variables/ || /gather/ ||/constant_folding/ || /dead_code_el/) ' \
-		| awk '{
+		| awk -v div="$divisor" '{
 			if ($1 == "constant_folding") cf += $4;
 			else if ($1 == "dead_code_elimination") dce += $4;
 			else if ($1 == "functions" || $1 == "expressions" || $1 == "statements" || $1 == "check_refs" || $1 == "unique_variables") pt += $4;
@@ -16,18 +18,18 @@ function gather_data() {
 			else if ($1 == "INST") inst += $4;
 			}
 		END {
-			print "INST ", int(inst / 25);
-			print "VARS ", int(vars / 25);
-			print "PT ", int((pt / 1000) / 25);
-			print "CFG ", int((cfg / 1000) / 25);
-			print "CP ", int((cf / 1000) / 25);
-			print "DCE ", int((dce / 1000) / 25);
+			print "INST ", int(inst / div);
+			print "VARS ", int(vars / div);
+			print "PT ", int((pt / 1000) / div);
+			print "CFG ", int((cfg / 1000) / div);
+			print "CP ", int((cf / 1000) / div);
+			print "DCE ", int((dce / 1000) / div);
 		}' >> stats_result.txt
 }
 
 
+runs=25;
 loc=(100 250 500 750 1000 1250 1500 1750 2000)
-# loc=(1000)
 
 header="LOC Instructions Vars Parsing Control-Flow Constant-Prop Live/Dead end"
 
@@ -38,11 +40,11 @@ for i in ${loc[@]}; do
 	echo "" > tmp.txt
 	echo "With -loc = $i"
 	echo "$i " >> stats_result.txt
-	for j in {1..25}; do
+	for ((j = 1; j <= $runs; j++)); do
 		echo "round: $j"
 		./program_generation -loc $i -p true >> tmp.txt
 	done
-	gather_data
+	gather_data $runs
 	echo "end" >> stats_result.txt
 done
 
@@ -53,11 +55,11 @@ for i in ${loc[@]}; do
 	echo "" > tmp.txt
 	echo "With -loc = $i"
 	echo "$i " >> stats_result.txt
-	for j in {1..25}; do
+	for ((j = 1; j <= $runs; j++)); do
 		echo "round: $j"
 		./program_generation -loc $i -f true >> tmp.txt
 	done
-	gather_data
+	gather_data $runs
 	echo "end" >> stats_result.txt
 done
 
