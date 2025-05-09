@@ -1,5 +1,6 @@
 #pragma once
-#include "control_flow.hh"
+#include "../control_flow.hh"
+#include "../internal.hh"
 
 #define PRINT_WIDTH 15
 
@@ -26,7 +27,7 @@ namespace whilelang {
         State built_in_join(const State x, const State y);
         bool built_in_join_mut(State &x, const State y);
 
-        const State get_state(Node instruction) {
+        const State get_state(const Node &instruction) {
             return state_table[instruction];
         };
 
@@ -46,10 +47,10 @@ namespace whilelang {
 
         bool state_equals(State x, State y);
 
-        void init(
-            const Nodes instructions,
-            const Vars vars,
-            const Node program_entry,
+        void init_state_table(
+            const Nodes &instructions,
+            const Vars &vars,
+            const Node &program_entry,
             State first_state);
     };
 
@@ -63,16 +64,16 @@ namespace whilelang {
     }
 
     template<typename State, typename LatticeValue>
-    void DataFlowAnalysis<State, LatticeValue>::init(
-        const Nodes instructions,
-        const Vars vars,
-        const Node program_start,
+    void DataFlowAnalysis<State, LatticeValue>::init_state_table(
+        const Nodes &instructions,
+        const Vars &vars,
+        const Node &program_start,
         State first_state) {
         if (instructions.empty()) {
             throw std::runtime_error("No instructions exist for this program");
         }
 
-        for (auto inst : instructions) {
+        for (const auto &inst : instructions) {
             state_table.insert({inst, this->create_state_fn(vars)});
         }
 
@@ -85,68 +86,6 @@ namespace whilelang {
         return state_table[inst][var];
     }
 
-    // template<typename State, typename LatticeValue>
-    // State
-    // DataFlowAnalysis<State, LatticeValue>::join(const State x, const State y)
-    // {
-    //     State result_state = x;
-    //
-    //     for (const auto &[key, val_y] : y) {
-    //         auto res = result_state.find(key);
-    //         if (res != result_state.end()) {
-    //             auto val_x = res->second;
-    //             result_state[key] = join_fn(val_x, val_y);
-    //         } else {
-    //             throw std::runtime_error("State do not have the same keys");
-    //         }
-    //     }
-    //     return result_state;
-    // }
-    //
-    // template<typename State, typename LatticeValue>
-    // bool
-    // DataFlowAnalysis<State, LatticeValue>::join_mut(State &x, const State y)
-    // {
-    //     bool changed = false;
-    //     for (const auto &[key, val_y] : y) {
-    //         auto res = x.find(key);
-    //         if (res != x.end()) {
-    //             auto join_res = join_fn(res->second, val_y);
-    //             if (!(res->second == join_res)) {
-    //                 x[key] = join_res;
-    //                 changed = true;
-    //             }
-    //         } else {
-    //             throw std::runtime_error("State do not have the same keys");
-    //         }
-    //     }
-    //     return changed;
-    // }
-
-    // template<typename State, typename LatticeValue>
-    // bool DataFlowAnalysis<State, LatticeValue>::state_equals(State x, State
-    // y) {
-    //     if (x.size() != y.size()) {
-    //         throw std::runtime_error("State sizes do not match");
-    //     }
-    //
-    //     for (auto it1 = x.begin(), it2 = y.begin();
-    //          it1 != x.end() && it2 != y.end();
-    //          ++it1, ++it2) {
-    //         auto [key1, val1] = *it1;
-    //         auto [key2, val2] = *it2;
-    //
-    //         if (key1 != key2) {
-    //             throw std::runtime_error("State keys do not match");
-    //         }
-    //
-    //         if (val1 != val2) {
-    //             return false;
-    //         }
-    //     }
-    //     return true;
-    // }
-
     template<typename State, typename LatticeValue>
     void DataFlowAnalysis<State, LatticeValue>::forward_worklist_algoritm(
         std::shared_ptr<ControlFlow> cfg, State first_state) {
@@ -154,7 +93,8 @@ namespace whilelang {
         const Vars vars = cfg->get_vars();
 
         std::deque<Node> worklist{cfg->get_program_entry()};
-        this->init(instructions, vars, cfg->get_program_entry(), first_state);
+        this->init_state_table(
+            instructions, vars, cfg->get_program_entry(), first_state);
 
         while (!worklist.empty()) {
             Node inst = worklist.front();
@@ -180,7 +120,8 @@ namespace whilelang {
         const Vars vars = cfg->get_vars();
 
         std::deque<Node> worklist{instructions.begin(), instructions.end()};
-        this->init(instructions, vars, cfg->get_program_exit(), first_state);
+        this->init_state_table(
+            instructions, vars, cfg->get_program_exit(), first_state);
 
         while (!worklist.empty()) {
             Node inst = worklist.front();
@@ -199,6 +140,7 @@ namespace whilelang {
         }
     }
 
+    // Requires the user to define the << operator for the State type
     template<typename State, typename LatticeValue>
     void DataFlowAnalysis<State, LatticeValue>::log_state_table(
         std::shared_ptr<ControlFlow> cfg) {

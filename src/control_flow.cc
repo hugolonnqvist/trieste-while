@@ -20,27 +20,27 @@ namespace whilelang {
         vars.insert(get_identifier(ident));
     };
 
-    void ControlFlow::add_predecessor(Node node, Node prev) {
+    void ControlFlow::add_predecessor(const Node &node, const Node &prev) {
         append_to_nodemap(predecessor, node, prev);
     }
 
-    void ControlFlow::add_predecessor(Node node, NodeSet prevs) {
+    void ControlFlow::add_predecessor(const Node &node, const NodeSet &prevs) {
         append_to_nodemap(predecessor, node, prevs);
     }
 
-    void ControlFlow::add_predecessor(NodeSet nodes, Node prev) {
+    void ControlFlow::add_predecessor(const NodeSet &nodes, const Node &prev) {
         append_to_nodemap(predecessor, nodes, prev);
     }
 
-    void ControlFlow::add_successor(Node node, Node succ) {
+    void ControlFlow::add_successor(const Node &node, const Node &succ) {
         append_to_nodemap(successor, node, succ);
     }
 
-    void ControlFlow::add_successor(Node node, NodeSet succ) {
+    void ControlFlow::add_successor(const Node &node, const NodeSet &succ) {
         append_to_nodemap(successor, node, succ);
     }
 
-    void ControlFlow::add_successor(NodeSet nodes, Node succ) {
+    void ControlFlow::add_successor(const NodeSet &nodes, const Node &succ) {
         append_to_nodemap(successor, nodes, succ);
     }
 
@@ -127,8 +127,8 @@ namespace whilelang {
 
     // Private
 
-    void ControlFlow::append_to_nodemap(
-        NodeMap<NodeSet> &map, Node key, Node value) {
+    inline void ControlFlow::append_to_nodemap(
+        NodeMap<NodeSet> &map, const Node &key, const Node &value) {
         auto res = map.find(key);
 
         if (res != map.end()) {
@@ -140,8 +140,8 @@ namespace whilelang {
         }
     }
 
-    void ControlFlow::append_to_nodemap(
-        NodeMap<NodeSet> &map, Node key, NodeSet values) {
+    inline void ControlFlow::append_to_nodemap(
+        NodeMap<NodeSet> &map, const Node &key, const NodeSet &values) {
         auto res = map.find(key);
 
         if (res != map.end()) {
@@ -151,10 +151,10 @@ namespace whilelang {
         }
     }
 
-    void ControlFlow::append_to_nodemap(
-        NodeMap<NodeSet> &map, NodeSet nodes, Node value) {
-        for (auto it = nodes.begin(); it != nodes.end(); it++) {
-            append_to_nodemap(map, *it, value);
+    inline void ControlFlow::append_to_nodemap(
+        NodeMap<NodeSet> &map, const NodeSet &nodes, const Node &value) {
+        for (auto &node : nodes) {
+            append_to_nodemap(map, node, value);
         }
     }
 }

@@ -1,5 +1,5 @@
 #include "../analyses/liveness.hh"
-#include "../dataflow_analysis.hh"
+#include "../analyses/dataflow_analysis.hh"
 #include "../internal.hh"
 #include "../utils.hh"
 

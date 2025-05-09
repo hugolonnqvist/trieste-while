@@ -1,3 +1,4 @@
+#include "../analyses/dataflow_analysis.hh"
 #include "../analyses/zero.hh"
 #include "../control_flow.hh"
 #include "../internal.hh"
@@ -8,7 +9,7 @@ namespace whilelang {
     PassDef z_analysis(std::shared_ptr<ControlFlow> cfg) {
         auto analysis =
             std::make_shared<DataFlowAnalysis<State, ZeroLatticeValue>>(
-                zero_create_state, state_join, zero_flow);
+                zero_create_state, zero_state_join, zero_flow);
 
         PassDef z_analysis = {
             "z_analysis", normalization_wf, dir::topdown | dir::once, {}};

@@ -19,19 +19,19 @@ namespace whilelang {
             fun_def_to_calls.clear();
         }
 
-        inline const NodeSet successors(Node node) {
+        inline const NodeSet &successors(const Node &node) {
             return successor[node];
         };
 
-        inline const NodeSet predecessors(Node node) {
+        inline const NodeSet &predecessors(const Node &node) {
             return predecessor[node];
         };
 
-        inline const Nodes get_instructions() {
+        inline const Nodes &get_instructions() {
             return instructions;
         };
 
-        inline const Vars get_vars() {
+        inline const Vars &get_vars() {
             return vars;
         };
 
@@ -39,11 +39,11 @@ namespace whilelang {
             return dirty_flag;
         }
 
-        void set_dirty_flag(bool new_state) {
+        inline void set_dirty_flag(bool new_state) {
             dirty_flag = new_state;
         }
 
-        void add_instruction(Node inst) {
+        inline void add_instruction(Node inst) {
             instructions.push_back(inst);
         };
 
@@ -69,13 +69,13 @@ namespace whilelang {
 
         void add_var(Node ident);
 
-        void add_predecessor(Node node, Node prev);
-        void add_predecessor(Node node, NodeSet prev);
-        void add_predecessor(NodeSet node, Node prev);
+        void add_predecessor(const Node &node, const Node &prev);
+        void add_predecessor(const Node &node, const NodeSet &prev);
+        void add_predecessor(const NodeSet &node, const Node &prev);
 
-        void add_successor(Node node, Node prev);
-        void add_successor(Node node, NodeSet prev);
-        void add_successor(NodeSet node, Node prev);
+        void add_successor(const Node &node, const Node &prev);
+        void add_successor(const Node &node, const NodeSet &prev);
+        void add_successor(const NodeSet &node, const Node &prev);
 
         void log_predecessors_and_successors();
         void log_instructions();
@@ -93,8 +93,11 @@ namespace whilelang {
         NodeMap<NodeSet> predecessor;
         NodeMap<NodeSet> successor;
 
-        void append_to_nodemap(NodeMap<NodeSet> &map, Node key, Node value);
-        void append_to_nodemap(NodeMap<NodeSet> &map, Node key, NodeSet values);
-        void append_to_nodemap(NodeMap<NodeSet> &map, NodeSet nodes, Node prev);
+        inline void append_to_nodemap(
+            NodeMap<NodeSet> &map, const Node &key, const Node &value);
+        inline void append_to_nodemap(
+            NodeMap<NodeSet> &map, const Node &key, const NodeSet &values);
+        inline void append_to_nodemap(
+            NodeMap<NodeSet> &map, const NodeSet &nodes, const Node &prev);
     };
 }

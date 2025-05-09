@@ -1,5 +1,6 @@
-#include "../dataflow_analysis.hh"
+#pragma once
 #include "../utils.hh"
+#include "dataflow_analysis.hh"
 
 namespace whilelang {
 
@@ -105,7 +106,7 @@ namespace whilelang {
         return top;
     }
 
-    inline bool state_join(State &x, const State &y) {
+    inline bool zero_state_join(State &x, const State &y) {
         bool changed = false;
         for (const auto &[key, val_y] : y) {
             auto res = x.find(key);

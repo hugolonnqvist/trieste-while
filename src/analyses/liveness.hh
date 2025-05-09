@@ -1,5 +1,6 @@
-#include "../dataflow_analysis.hh"
+#pragma once
 #include "../utils.hh"
+#include "dataflow_analysis.hh"
 
 namespace whilelang {
     using State = Vars;

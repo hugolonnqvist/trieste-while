@@ -17,7 +17,7 @@ namespace whilelang {
     // Evaluation
     PassDef eval();
 
-	// For performance testing
+    // For performance testing
     PassDef gather_stats();
 
     // Pre static analysis

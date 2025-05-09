@@ -1,5 +1,6 @@
-#include "../dataflow_analysis.hh"
+#pragma once
 #include "../utils.hh"
+#include "dataflow_analysis.hh"
 
 namespace whilelang {
     enum class CPAbstractType { Bottom, Constant, Top };
@@ -166,10 +167,11 @@ namespace whilelang {
                     incoming_state[var] = CPLatticeValue::top();
                 }
             } else {
-                // // Is function call
+                // Is function call
                 auto prevs = cfg->predecessors(inst);
                 CPLatticeValue val = CPLatticeValue::bottom();
 
+                // Join result of all return statements
                 for (auto prev : prevs) {
                     if (prev == Return) {
                         val = cp_lattice_join(
