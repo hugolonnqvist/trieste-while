@@ -62,6 +62,7 @@ namespace whilelang {
         for (auto fun_def : *fun_defs) {
             if (get_identifier((fun_def / FunId) / Ident) == "main") {
                 this->program_entry = fun_def;
+                this->program_exit = get_last_basic_child(fun_def / Body);
                 return;
             }
         }

@@ -26,8 +26,8 @@ function gather_data() {
 }
 
 
-# loc=(100 200 300 400 500 600 700 800 900 1000)
-loc=(50 75 100)
+loc=(100 250 500 750 1000 1250 1500 1750 2000)
+# loc=(1000)
 
 header="LOC Instructions Vars Parsing Control-Flow Constant-Prop Live/Dead end"
 

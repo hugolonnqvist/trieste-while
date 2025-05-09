@@ -59,6 +59,10 @@ namespace whilelang {
             return program_entry;
         };
 
+        inline Node get_program_exit() {
+            return program_exit;
+        };
+
         void set_functions_calls(
             std::shared_ptr<NodeSet> fun_defs,
             std::shared_ptr<NodeSet> fun_calls);
@@ -80,6 +84,7 @@ namespace whilelang {
 
       private:
         Node program_entry;
+        Node program_exit;
         Nodes instructions;
         Vars vars;
         bool dirty_flag;

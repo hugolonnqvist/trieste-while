@@ -178,7 +178,7 @@ def gen_partial_random_program(max_loc):
     TEMPLATE_BLOCKS = [
 
         # Constant folding and propagation
-        "x := 2 + 3;\ny := x + 1;\noutput y;",
+        "x := 2 + 3 + 5;\ny := x + 1 - 2;\noutput y;",
 
         # Constant folding with nested expressions
         "a := 10;\nb := a + 0;\nc := b * 1;\noutput c;",
@@ -208,7 +208,7 @@ def gen_partial_random_program(max_loc):
         "if false then {\n    y := 100;\n    output y;\n} else {\n    skip;\n};",
 
         # Multiple constant uses
-        "a := 4;\nb := a + 4;\nc := b * 2;\noutput c;",
+        "a := 4;\nb := a + 4 + a;\nc := b * 2;\noutput c;",
 
         # Constant comparison short-circuiting
         "if 3 < 5 then {\n    x := 1;\n} else {\n    x := 2;\n};\noutput x;",
