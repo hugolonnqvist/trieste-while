@@ -7,7 +7,7 @@ namespace whilelang {
         Rewriter rewriter = {
             "final_rewriter",
             {
-                mermaid(normalization_wf),
+                generate_mermaid(normalization_wf),
             },
             whilelang::normalization_wf,
         };

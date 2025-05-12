@@ -22,7 +22,7 @@ src/final_rewriter.cc
 src/utils.cc
 src/control_flow.cc
 
-src/passes/mermaid.cc
+src/passes/generate_mermaid.cc
 
 src/passes/functions.cc
 src/passes/expressions.cc
@@ -43,6 +43,7 @@ src/while_trieste.cc
 src/parser.cc
 src/reader.cc
 
+src/passes/generate_mermaid.cc
 src/utils.cc
 src/control_flow.cc
 

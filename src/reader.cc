@@ -10,8 +10,11 @@ namespace whilelang {
             "while",
             {
                 // Parsing
+				generate_mermaid(parse_wf),
                 functions(),
+				generate_mermaid(functions_wf),
                 expressions(),
+				generate_mermaid(expressions_wf),
                 statements(),
 
                 // Checking

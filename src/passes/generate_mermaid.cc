@@ -5,18 +5,19 @@ namespace whilelang {
 
     using namespace trieste;
 
-    PassDef mermaid(const wf::Wellformed &wf) {
+    PassDef generate_mermaid(const wf::Wellformed &wf) {
         auto children_map = std::make_shared<NodeMap<NodeSet>>();
         auto id_map = std::make_shared<NodeMap<std::string>>();
 
-        PassDef mermaid = {
-            "mermaid",
+        PassDef generate_mermaid = {
+            "generate_mermaid",
             wf,
             dir::topdown | dir::once,
             {
                 Any[Rhs] >> [=](Match &_) -> Node {
                     auto child = _(Rhs);
                     auto parent = child->parent();
+
                     if (!parent) {
                         return NoChange;
                     }
@@ -34,7 +35,7 @@ namespace whilelang {
                     } else {
                         // Otherwise create new entry
                         children_map->insert({parent, {child}});
-						
+
                         auto id = std::string(parent->fresh().view());
                         id_map->insert({parent, id});
                     }
@@ -42,7 +43,7 @@ namespace whilelang {
                 },
             }};
 
-        mermaid.post([=](Node) {
+        generate_mermaid.post([=](Node) {
             auto get_id = [=](Node n) -> std::string {
                 auto res = id_map->find(n);
                 if (res == id_map->end()) {
@@ -85,6 +86,6 @@ namespace whilelang {
             return 0;
         });
 
-        return mermaid;
+        return generate_mermaid;
     }
 }

@@ -1,9 +1,7 @@
-fun main() {
-	var x;
-	x := input;
+fun square(x) {
+	return x * x;
+}
 
-	while x < 0 do {
-		x:=x + 1;
-	};
-	output x;
+fun main() {
+	output square(5);
 }

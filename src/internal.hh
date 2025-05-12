@@ -21,7 +21,7 @@ namespace whilelang {
     PassDef gather_stats();
 
     // Gathering AST in mermaid
-    PassDef mermaid(const wf::Wellformed &wf);
+    PassDef generate_mermaid(const wf::Wellformed &wf);
 
     // Pre static analysis
     PassDef normalization();

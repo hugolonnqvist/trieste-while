@@ -31,7 +31,7 @@ function gather_data() {
 runs=25;
 loc=(100 250 500 750 1000 1250 1500 1750 2000)
 
-header="LOC Instructions Vars Parsing Control-Flow Constant-Prop Live/Dead end"
+header="LOC Inst Vars Parsing Control-Flow Constant-Prop Live/Dead end"
 
 echo "Running partial generation"
 echo "Partial mode" > stats_result.txt
