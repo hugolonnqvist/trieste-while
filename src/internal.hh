@@ -20,6 +20,9 @@ namespace whilelang {
     // For performance testing
     PassDef gather_stats();
 
+    // Gathering AST in mermaid
+    PassDef mermaid(const wf::Wellformed &wf);
+
     // Pre static analysis
     PassDef normalization();
     PassDef gather_functions(std::shared_ptr<ControlFlow> cfg);

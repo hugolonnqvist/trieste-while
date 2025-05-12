@@ -53,7 +53,6 @@ namespace whilelang {
                             << (T(Assign)[Assign]
                                 << (T(Ident)[Ident] * T(AExpr)[AExpr])) >>
                         [=](Match &_) -> Node {
-                        cfg->get_instructions();
                         auto id = get_identifier(_(Ident));
                         auto assign = _(Assign);
 

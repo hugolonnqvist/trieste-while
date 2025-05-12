@@ -1,0 +1,9 @@
+fun main() {
+	var x;
+	x := input;
+
+	while x < 0 do {
+		x:=x + 1;
+	};
+	output x;
+}

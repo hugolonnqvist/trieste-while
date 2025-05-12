@@ -21,6 +21,7 @@ int main(int argc, char const *argv[]) {
     bool run_static_analysis = false;
     bool run_zero_analysis = false;
     bool run_gather_stats = false;
+    bool run_mermaid = false;
     app.add_flag("-r,--run", run, "Run the program (prompting inputs).");
     app.add_flag(
         "-s,--static-analysis",
@@ -36,7 +37,11 @@ int main(int argc, char const *argv[]) {
         run_gather_stats,
         "Runs the gather stats pass displaying total instructions and "
         "variables after normalization. Needed for the ./stats.sh script.");
-
+    app.add_flag(
+        "-m, --mermaid",
+        run_mermaid,
+        "Runs the mermaid pass which parses the final AST into mermaid "
+        "format ");
     try {
         app.parse(argc, argv);
     } catch (const CLI::ParseError &e) {
@@ -77,6 +82,9 @@ int main(int argc, char const *argv[]) {
 
         whilelang::log_var_map(vars_map);
 
+        if (run_mermaid) {
+            result >> whilelang::final_rewriter();
+        }
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
     }
