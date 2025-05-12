@@ -6,7 +6,7 @@ namespace whilelang {
     using namespace trieste;
 
     PassDef mermaid(const wf::Wellformed &wf) {
-        auto ast_map = std::make_shared<NodeMap<NodeSet>>();
+        auto children_map = std::make_shared<NodeMap<NodeSet>>();
         auto id_map = std::make_shared<NodeMap<std::string>>();
 
         PassDef mermaid = {
@@ -15,27 +15,28 @@ namespace whilelang {
             dir::topdown | dir::once,
             {
                 Any[Rhs] >> [=](Match &_) -> Node {
-                    auto value = _(Rhs);
-                    auto key = value->parent();
-                    if (!key) {
+                    auto child = _(Rhs);
+                    auto parent = child->parent();
+                    if (!parent) {
                         return NoChange;
                     }
 
-                    auto res = ast_map->find(key);
-
-                    if (!ast_map->contains(value)) {
+                    if (!children_map->contains(child)) {
                         id_map->insert(
-                            {value, std::string(value->fresh().view())});
+                            {child, std::string(child->fresh().view())});
                     }
 
-                    if (res != ast_map->end()) {
+                    auto res = children_map->find(parent);
+
+                    if (res != children_map->end()) {
                         // Append to nodemap entry if already exist
-                        res->second.insert(value);
+                        res->second.insert(child);
                     } else {
                         // Otherwise create new entry
-                        ast_map->insert({key, {value}});
-                        auto id = std::string(key->fresh().view());
-                        id_map->insert({key, id});
+                        children_map->insert({parent, {child}});
+						
+                        auto id = std::string(parent->fresh().view());
+                        id_map->insert({parent, id});
                     }
                     return NoChange;
                 },
@@ -73,7 +74,7 @@ namespace whilelang {
             };
 
             auto result = std::stringstream();
-            for (const auto &[key, values] : *ast_map) {
+            for (const auto &[key, values] : *children_map) {
                 for (const auto &value : values) {
                     result << build_mermaid_node(key) << "-->"
                            << build_mermaid_node(value) << "\n";
