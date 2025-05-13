@@ -4,10 +4,12 @@
 namespace whilelang {
     using namespace trieste;
 
-    Reader reader(std::shared_ptr<std::map<std::string, std::string>> vars_map, bool run_stats);
+    Reader reader(
+        std::shared_ptr<std::map<std::string, std::string>> vars_map,
+        bool run_stats,
+        bool run_mermaid);
     Rewriter interpret();
     Rewriter optimization_analysis(bool run_zero_analysis);
-    Rewriter final_rewriter();
 
     // Program
     inline const auto Program = TokenDef("program");
@@ -19,7 +21,7 @@ namespace whilelang {
     inline const auto ParamList = TokenDef("param_list");
     inline const auto Param = TokenDef("param", flag::lookup | flag::shadowing);
     inline const auto Body = TokenDef("body");
-    inline const auto Var = TokenDef("var", flag::lookup);
+    inline const auto Var = TokenDef("var", flag::lookup | flag::shadowing);
     inline const auto Return = TokenDef("return");
 
     inline const auto FunCall = TokenDef("function_call");

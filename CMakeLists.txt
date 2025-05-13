@@ -17,7 +17,6 @@ src/parser.cc
 src/reader.cc
 src/interpreter.cc
 src/optimization_analysis.cc
-src/final_rewriter.cc
 
 src/utils.cc
 src/control_flow.cc

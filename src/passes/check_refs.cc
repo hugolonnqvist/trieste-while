@@ -15,10 +15,12 @@ namespace whilelang {
                         return Error << (ErrorAst << _(Ident))
                                      << (ErrorMsg ^ "Undefined variable");
                     } else if (def.size() > 1) {
-						return Error << (ErrorAst << _(Ident))
-									 << (ErrorMsg ^ "Variable can not be defined multiple times");
-					}
-				
+                        return Error
+                            << (ErrorAst << _(Ident))
+                            << (ErrorMsg ^
+                                "Variable can not be defined multiple times");
+                    }
+
                     return NoChange;
                 },
             }};

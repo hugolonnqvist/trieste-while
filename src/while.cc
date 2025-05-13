@@ -50,7 +50,7 @@ int main(int argc, char const *argv[]) {
 
     auto vars_map = std::make_shared<std::map<std::string, std::string>>();
     auto reader =
-        whilelang::reader(vars_map, run_gather_stats).file(input_path);
+        whilelang::reader(vars_map, run_gather_stats, run_mermaid).file(input_path);
 
     try {
         auto program_empty = [](trieste::Node ast) -> bool {
@@ -79,12 +79,8 @@ int main(int argc, char const *argv[]) {
         }
         trieste::logging::Debug() << "AST after all passes: " << std::endl
                                   << result.ast;
-
         whilelang::log_var_map(vars_map);
 
-        if (run_mermaid) {
-            result >> whilelang::final_rewriter();
-        }
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
     }

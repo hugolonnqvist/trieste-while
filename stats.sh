@@ -28,8 +28,8 @@ function gather_data() {
 }
 
 
-runs=25;
-loc=(100 250 500 750 1000 1250 1500 1750 2000)
+runs=10;
+loc=(100 500 1000 2000 5000 10000 15000 20000)
 
 header="LOC Inst Vars Parsing Control-Flow Constant-Prop Live/Dead end"
 

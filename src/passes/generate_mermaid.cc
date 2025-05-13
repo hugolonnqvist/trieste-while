@@ -10,7 +10,7 @@ namespace whilelang {
         auto id_map = std::make_shared<NodeMap<std::string>>();
 
         PassDef generate_mermaid = {
-            "generate_mermaid",
+            "mermaid",
             wf,
             dir::topdown | dir::once,
             {
