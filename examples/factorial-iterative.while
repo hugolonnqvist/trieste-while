@@ -1,0 +1,14 @@
+fun main() {
+	var x;
+	var i;
+
+	x := 1;
+	i := input;
+
+	while 0 < i do {
+	  x := i * x;
+	  i := i - 1;
+	};
+
+	output x;
+}
