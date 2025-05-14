@@ -4,7 +4,7 @@ namespace whilelang {
     using namespace trieste;
 
     PassDef functions() {
-        return {
+        PassDef pass = {
             "functions",
             functions_wf,
             dir::topdown,
@@ -42,32 +42,13 @@ namespace whilelang {
                 In(Param) * T(Group)[Group] >>
                     [](Match &_) -> Node { return Seq << *_(Group); },
 
-                T(Ident)[Ident] * T(Paren)[Paren] >> [](Match &_) -> Node {
-                    return FunCall << (FunId << _(Ident))
-                                   << (ArgList << *_(Paren));
-                },
-
-                T(ArgList)
-                        << (T(Comma, Group)[Group]
-                            << --(T(Ident) * T(Paren))) >>
-                    [](Match &_) -> Node {
-                    Node args = ArgList;
-                    for (auto child : *_(Group)) {
-                        args << (Arg << child);
-                    }
-
-                    return args;
-                },
-
-                T(ArgList)[ArgList] << (Start * T(Add, Sub, Mul)[Op] * End) >>
-                    [](Match &_) -> Node { return ArgList << (Arg << _(Op)); },
-
                 // Errors
-
-                T(Arg)[Arg] << (T(Group) << (Start * End)) >>
+                T(Var)[Var] << --(Start * T(Ident) * End) >>
                     [](Match &_) -> Node {
-                    return Error << (ErrorAst << _(Arg))
-                                 << (ErrorMsg ^ "Invalid empty argument");
+                    return Error << (ErrorAst << _(Var))
+                                 << (ErrorMsg ^
+                                     "Invalid variable declaration, expected "
+                                     "an identifier");
                 },
 
                 T(FunDef)[FunDef] << --(T(FunId) * T(ParamList) * T(Body)) >>
@@ -97,15 +78,12 @@ namespace whilelang {
                         << (ErrorAst << _(Program))
                         << (ErrorMsg ^ "Invalid program, missing a function");
                 },
-
-                T(Var)[Var] << --(Start * T(Ident) * End) >>
-                    [](Match &_) -> Node {
-                    return Error << (ErrorAst << _(Var))
-                                 << (ErrorMsg ^
-                                     "Invalid variable declaration, expected "
-                                     "an identifier");
-                },
-
             }};
+
+        pass.pre([](Node n) {
+            std::cout << n;
+            return 0;
+        });
+        return pass;
     }
 }

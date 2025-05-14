@@ -4,7 +4,7 @@ namespace whilelang {
     using namespace trieste;
 
     PassDef statements() {
-        return {
+        PassDef pass = {
             "statements",
             statements_wf,
             dir::bottomup | dir::once,
@@ -51,9 +51,6 @@ namespace whilelang {
                     return FunDef << _(FunId) << _(ParamList) << body;
                 },
 
-                T(Var)[Var] << T(Ident) >>
-                    [](Match &_) -> Node { return Stmt << _(Var); },
-
                 T(Return)[Return] << T(AExpr) >>
                     [](Match &_) -> Node { return Stmt << _(Return); },
 
@@ -66,6 +63,9 @@ namespace whilelang {
 
                 T(Brace) << (T(Stmt)[Stmt] * End) >>
                     [](Match &_) -> Node { return _(Stmt); },
+
+                T(Var)[Var] << T(Ident) >>
+                    [](Match &_) -> Node { return Stmt << _(Var); },
 
                 // Error rules
                 T(Group) << (T(Stmt, Brace) * T(Stmt, Brace)[Stmt]) >>
@@ -200,5 +200,11 @@ namespace whilelang {
                 },
 
             }};
+
+        pass.pre([](Node n) {
+            std::cout << n;
+            return 0;
+        });
+        return pass;
     }
 }

@@ -52,7 +52,7 @@ namespace whilelang {
 		Add | Sub | Mul |
 		LT | Equals |
 		And | Or |
-		Assign
+		Assign 
 		;
 
 	inline const wf::Wellformed parse_wf =
@@ -89,10 +89,7 @@ namespace whilelang {
 		| (FunDef <<= FunId * ParamList * Body)
 		| (ParamList <<= Param++)
 		| (Param <<= Ident)[Ident]
-		| (FunCall <<= FunId * ArgList)
 		| (FunId <<= Ident)
-		| (ArgList <<= Arg++)
-		| (Arg <<= ~(grouping_construct | parse_token))
 		| (Body <<= ~grouping_construct)
 		| (Var <<= Ident)[Ident]
 		;
@@ -104,6 +101,8 @@ namespace whilelang {
 		functions_wf
 		| (AExpr  <<= (Expr >>= (Int | Ident | Mul | Add | Sub | Input | FunCall)))
 		| (BExpr  <<= (Expr >>= (True | False | Not | Equals | LT | And | Or)))
+		| (FunCall <<= FunId * ArgList)
+		| (ArgList <<= Arg++)
 		| (Arg <<= AExpr)
 		| (Body	  <<= ~expressions_grouping_construct)
 		| (Add    <<= AExpr++[2])

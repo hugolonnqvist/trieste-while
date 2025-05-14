@@ -10,7 +10,28 @@ namespace whilelang {
             expressions_wf,
             dir::bottomup,
             {
-                UNHANDLED * T(True, False)[Expr] >>
+
+                T(Ident)[Ident] * T(Paren)[Paren] >> [](Match &_) -> Node {
+                    return FunCall << (FunId << _(Ident))
+                                   << (ArgList << *_(Paren));
+                },
+
+                T(ArgList)
+                        << (T(Comma, Group)[Group]
+                            << --(T(Ident) * T(Paren))) >>
+                    [](Match &_) -> Node {
+                    Node args = ArgList;
+                    for (auto child : *_(Group)) {
+                        args << (Arg << child);
+                    }
+
+                    return args;
+                },
+
+                In(ArgList) * T(AExpr)[AExpr] >>
+                    [](Match &_) -> Node { return Arg << _(AExpr); },
+
+                UNHANDLED *T(True, False)[Expr] >>
                     [](Match &_) -> Node { return BExpr << _(Expr); },
 
                 UNHANDLED *T(Ident, Int, Input, FunCall)[Expr] >>
@@ -96,6 +117,12 @@ namespace whilelang {
                 In(And, Or) * (!T(BExpr))[Expr] >> [](Match &_) -> Node {
                     return Error << (ErrorAst << _(Expr))
                                  << (ErrorMsg ^ "Invalid operand");
+                },
+
+                T(Arg)[Arg] << (T(Group) << (Start * End)) >>
+                    [](Match &_) -> Node {
+                    return Error << (ErrorAst << _(Arg))
+                                 << (ErrorMsg ^ "Invalid empty argument");
                 },
             }};
     }
