@@ -12,8 +12,9 @@ namespace whilelang {
             {
 
                 T(Ident)[Ident] * T(Paren)[Paren] >> [](Match &_) -> Node {
-                    return FunCall << (FunId << _(Ident))
-                                   << (ArgList << *_(Paren));
+                    return AExpr
+                        << (FunCall << (FunId << _(Ident))
+                                    << (ArgList << *_(Paren)));
                 },
 
                 T(ArgList)
@@ -34,7 +35,7 @@ namespace whilelang {
                 UNHANDLED *T(True, False)[Expr] >>
                     [](Match &_) -> Node { return BExpr << _(Expr); },
 
-                UNHANDLED *T(Ident, Int, Input, FunCall)[Expr] >>
+                UNHANDLED *T(Ident, Int, Input)[Expr] >>
                     [](Match &_) -> Node { return AExpr << _(Expr); },
 
                 UNHANDLED *(T(Not) << End) * T(BExpr)[BExpr] >>

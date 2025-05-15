@@ -4,7 +4,7 @@ namespace whilelang {
     using namespace trieste;
 
     PassDef statements() {
-        PassDef pass = {
+        return {
             "statements",
             statements_wf,
             dir::bottomup | dir::once,
@@ -200,11 +200,5 @@ namespace whilelang {
                 },
 
             }};
-
-        pass.pre([](Node n) {
-            std::cout << n;
-            return 0;
-        });
-        return pass;
     }
 }

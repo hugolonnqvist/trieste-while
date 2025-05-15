@@ -4,7 +4,7 @@ namespace whilelang {
     using namespace trieste;
 
     PassDef functions() {
-        PassDef pass = {
+        return {
             "functions",
             functions_wf,
             dir::topdown,
@@ -79,11 +79,5 @@ namespace whilelang {
                         << (ErrorMsg ^ "Invalid program, missing a function");
                 },
             }};
-
-        pass.pre([](Node n) {
-            std::cout << n;
-            return 0;
-        });
-        return pass;
     }
 }
