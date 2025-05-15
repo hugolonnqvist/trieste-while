@@ -1,5 +1,5 @@
-#include "../analyses/liveness.hh"
 #include "../analyses/dataflow_analysis.hh"
+#include "../analyses/liveness.hh"
 #include "../internal.hh"
 #include "../utils.hh"
 
@@ -22,7 +22,19 @@ namespace whilelang {
                 }
             }
             return std::nullopt;
-        } else if (expr == Not) {
+        } else if (expr == And) {
+            bool res = true;
+            for (auto &child : *expr) {
+                res = res && get_bexpr_value(child);
+            }
+            return res;
+        } else if (expr == Or) {
+            bool res = false;
+            for (auto &child : *expr) {
+                res = res || get_bexpr_value(child);
+            }
+            return res;
+		} else if (expr == Not) {
             return !get_bexpr_value(expr / Expr);
         } else {
             return std::nullopt;
