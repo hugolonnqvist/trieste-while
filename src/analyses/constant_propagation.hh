@@ -213,4 +213,13 @@ namespace whilelang {
         }
         return incoming_state;
     }
+
+    inline State cp_first_state(std::shared_ptr<ControlFlow> cfg) {
+        auto first_state = State();
+
+        for (auto var : cfg->get_vars()) {
+            first_state[var] = CPLatticeValue::top();
+        }
+        return first_state;
+    }
 }
