@@ -52,11 +52,10 @@ function to_stats() {
 		}' >> stats_result_graph.txt
 }
 
-runs=20;
+runs=25;
 loc=(1000 2500 5000 7500 10000 12500 15000 17500 20000)
 
-graph_header="LOC Inst Inst-Std Vars Vars-Std Parsing Parsing-Std CFG CFG-Std Constant-Prop Constant-Prop-Std Live-Dead Live-Dead-Std end"
-table_header="LOC Inst Vars Parsing CFG Constant-Prop Live-Dead  end"
+graph_header="LOC Inst Inst-Std Vars Vars-Std Parse Parse-Std CFG CFG-Std Constant-Prop Constant-Prop-Std Live-Dead Live-Dead-Std end"
 
 echo "Running partial generation"
 echo "Partial mode" > stats_result_graph.txt
@@ -97,7 +96,7 @@ tr -d '\n'  < stats_result_graph.txt | sed -e 's/\\\\\|mode/\n/g'> tmp.txt && ca
 
 sed -e 's/[A-Za-z-]\+-Std//g' ./stats_result_graph.txt > ./stats_result_table.txt
 sed -i -e 's/+=/ /g' ./stats_result_graph.txt
-sed -i -e 's/+=/$\\pm$/g' ./stats_result_table.txt
+sed -i -e 's/+=/$\\pm$/g' -e 's/Parse\|CFG\|Constant-Prop\|Live-Dead/&(ms)/g' ./stats_result_table.txt
 
 rm tmp.txt
 rm tmp2.txt
