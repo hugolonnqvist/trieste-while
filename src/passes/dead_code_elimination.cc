@@ -10,18 +10,6 @@ namespace whilelang {
         auto expr = bexpr / Expr;
         if (expr->type().in({True, False})) {
             return expr == True ? true : false;
-        } else if (expr->type().in({LT, Equals})) {
-            auto lhs = (expr / Lhs) / Expr;
-            auto rhs = (expr / Rhs) / Expr;
-
-            if (lhs == Int && rhs == Int) {
-                if (expr == LT) {
-                    return get_int_value(lhs) < get_int_value(rhs);
-                } else {
-                    return get_int_value(lhs) == get_int_value(rhs);
-                }
-            }
-            return std::nullopt;
         } else if (expr == And) {
             bool res = true;
             for (auto &child : *expr) {
@@ -34,12 +22,14 @@ namespace whilelang {
                 res = res || get_bexpr_value(child);
             }
             return res;
-		} else if (expr == Not) {
+        } else if (expr == Not) {
             return !get_bexpr_value(expr / Expr);
         } else {
             return std::nullopt;
         }
     };
+
+    auto bool_to_bexpr = [](bool v) -> Node { return v ? True : False; };
 
     PassDef dead_code_elimination(std::shared_ptr<ControlFlow> cfg) {
         auto liveness = std::make_shared<DataFlowAnalysis<State, std::string>>(
@@ -54,7 +44,7 @@ namespace whilelang {
                     T(FunDef)[FunDef] >> [=](Match &_) -> Node {
                         auto fun_id = (_(FunDef) / FunId) / Ident;
 
-                        if (fun_id->location().view() != "main" &&
+                        if (get_identifier(fun_id) != "main" &&
                             cfg->get_fun_calls_from_def(_(FunDef)).empty()) {
                             return {};
                         }
@@ -89,6 +79,25 @@ namespace whilelang {
                             ((Any[Stmt] * (T(Stmt) << T(Skip))) /
                              ((T(Stmt) << T(Skip)) * Any[Stmt])) >>
                         [](Match &_) -> Node { return Reapply << _(Stmt); },
+
+                    In(BExpr) * T(LT, Equals)[Op] >> [=](Match &_) -> Node {
+                        auto op = _(Op);
+
+                        auto lhs = (op / Lhs) / Expr;
+                        auto rhs = (op / Rhs) / Expr;
+
+                        if (lhs == Int && rhs == Int) {
+                            if (op == LT) {
+                                return bool_to_bexpr(
+                                    get_int_value(lhs) < get_int_value(rhs));
+                            } else {
+                                return bool_to_bexpr(
+                                    get_int_value(lhs) == get_int_value(rhs));
+                            }
+                        }
+
+                        return NoChange;
+                    },
 
                     T(Stmt)
                             << (T(If)
@@ -133,7 +142,7 @@ namespace whilelang {
             liveness->backward_worklist_algoritm(cfg, first_state);
 
             cfg->log_instructions();
-            // log_liveness(cfg, liveness);
+            log_liveness(cfg, liveness);
 
             return 0;
         });
