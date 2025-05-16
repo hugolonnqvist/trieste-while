@@ -39,7 +39,6 @@ namespace whilelang {
                 },
             }};
 
-        // clang-format on
         constant_folding.pre([=](Node) {
             State first_state = cp_first_state(cfg);
 
