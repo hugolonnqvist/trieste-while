@@ -9,7 +9,7 @@ namespace whilelang {
         CPAbstractType type;
         std::optional<int> value;
 
-        bool operator==(const CPLatticeValue &other) const {
+        inline bool operator==(const CPLatticeValue &other) const {
             if (type == other.type) {
                 if (type == CPAbstractType::Constant) {
                     return value == other.value;
@@ -18,6 +18,28 @@ namespace whilelang {
                 }
             }
             return false;
+        }
+
+        inline CPLatticeValue join(const CPLatticeValue &y) const {
+            auto top = CPAbstractType::Top;
+            auto constant = CPAbstractType::Constant;
+            auto bottom = CPAbstractType::Bottom;
+
+            if (this->type == bottom) {
+                return y;
+            } else if (y.type == bottom) {
+                return *this;
+            }
+
+            if (this->type == top || y.type == top) {
+                return CPLatticeValue::top();
+            }
+            if (this->type == constant && y.type == constant &&
+                this->value == y.value) {
+                return *this;
+            }
+
+            return CPLatticeValue::top();
         }
 
         friend std::ostream &
@@ -100,34 +122,12 @@ namespace whilelang {
         }
     };
 
-    inline CPLatticeValue
-    cp_lattice_join(const CPLatticeValue &x, const CPLatticeValue &y) {
-        CPAbstractType top = CPAbstractType::Top;
-        CPAbstractType constant = CPAbstractType::Constant;
-        CPAbstractType bottom = CPAbstractType::Bottom;
-
-        if (x.type == bottom) {
-            return y;
-        } else if (y.type == bottom) {
-            return x;
-        }
-
-        if (x.type == top || y.type == top) {
-            return CPLatticeValue::top();
-        }
-        if (x.type == constant && y.type == constant && x.value == y.value) {
-            return x;
-        }
-
-        return CPLatticeValue::top();
-    }
-
     inline bool cp_state_join(State &x, const State &y) {
         bool changed = false;
         for (const auto &[key, val_y] : y) {
             auto res = x.find(key);
             if (res != x.end()) {
-                auto join_res = cp_lattice_join(res->second, val_y);
+                auto join_res = res->second.join(val_y);
                 if (!(res->second == join_res)) {
                     x[key] = join_res;
                     changed = true;
@@ -174,8 +174,7 @@ namespace whilelang {
                 // Join result of all return statements
                 for (auto prev : prevs) {
                     if (prev == Return) {
-                        val = cp_lattice_join(
-                            val,
+                        val = val.join(
                             atom_flow_helper(prev / Atom, state_table[prev]));
                     }
                 }
