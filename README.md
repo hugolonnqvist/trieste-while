@@ -23,7 +23,3 @@ To execute it run:
 ./stats
 ```
 In the script both the number of runs and lines of code generated can be specified.
-
-
-## Purpose
-This project was a Bachelor's theis project which is available as reading:
