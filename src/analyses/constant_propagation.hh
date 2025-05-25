@@ -20,22 +20,16 @@ namespace whilelang {
             return false;
         }
 
-        inline CPLatticeValue join(const CPLatticeValue &y) const {
-            auto top = CPAbstractType::Top;
+        inline CPLatticeValue join(const CPLatticeValue &other) const {
             auto constant = CPAbstractType::Constant;
             auto bottom = CPAbstractType::Bottom;
 
             if (this->type == bottom) {
-                return y;
-            } else if (y.type == bottom) {
+                return other;
+            } else if (other.type == bottom) {
                 return *this;
-            }
-
-            if (this->type == top || y.type == top) {
-                return CPLatticeValue::top();
-            }
-            if (this->type == constant && y.type == constant &&
-                this->value == y.value) {
+            } else if (this->type == constant && other.type == constant &&
+                this->value == other.value) {
                 return *this;
             }
 
