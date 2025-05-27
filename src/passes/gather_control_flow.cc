@@ -104,11 +104,8 @@ namespace whilelang {
                     auto b_expr = _(While) / BExpr;
                     auto body = _(While) / Do;
 
-                    cfg->add_predecessor(b_expr, get_last_basic_children(body));
-                    cfg->add_predecessor(get_first_basic_child(body), b_expr);
-
-                    cfg->add_successor(b_expr, get_first_basic_child(body));
-                    cfg->add_successor(get_last_basic_children(body), b_expr);
+                    cfg->add_edge(get_last_basic_children(body), b_expr);
+                    cfg->add_edge(b_expr, get_first_basic_child(body));
 
                     return NoChange;
                 },
@@ -119,15 +116,8 @@ namespace whilelang {
                     auto then_stmt = _(If) / Then;
                     auto else_stmt = _(If) / Else;
 
-                    cfg->add_predecessor(
-                        get_first_basic_child(then_stmt), b_expr);
-                    cfg->add_predecessor(
-                        get_first_basic_child(else_stmt), b_expr);
-
-                    cfg->add_successor(
-                        b_expr, get_first_basic_child(then_stmt));
-                    cfg->add_successor(
-                        b_expr, get_first_basic_child(else_stmt));
+                    cfg->add_edge(b_expr, get_first_basic_child(then_stmt));
+                    cfg->add_edge(b_expr, get_first_basic_child(else_stmt));
 
                     return NoChange;
                 },
@@ -147,8 +137,7 @@ namespace whilelang {
                                 "Invalid function call, expected assignment as "
                                 "parent");
                         }
-                        cfg->add_predecessor(assign, _(Return));
-                        cfg->add_successor(_(Return), assign);
+						cfg->add_edge(_(Return), assign);
                     }
 
                     return NoChange;
@@ -157,8 +146,8 @@ namespace whilelang {
                 T(FunDef)[FunDef] >> [=](Match &_) -> Node {
                     auto fun_def = _(FunDef);
                     auto first_body = get_first_basic_child(fun_def / Body);
-                    cfg->add_successor(fun_def, first_body);
-                    cfg->add_predecessor(first_body, fun_def);
+					
+					cfg->add_edge(fun_def, first_body);
 
                     return NoChange;
                 },
@@ -166,9 +155,9 @@ namespace whilelang {
                 T(FunCall)[FunCall] >> [=](Match &_) -> Node {
                     auto fun_call = _(FunCall);
                     auto fun_def = cfg->get_fun_def(fun_call);
+					
+					cfg->add_edge(fun_call, fun_def);
 
-                    cfg->add_predecessor(fun_def, fun_call);
-                    cfg->add_successor(fun_call, fun_def);
                     return NoChange;
                 },
 
@@ -178,14 +167,12 @@ namespace whilelang {
                     auto first_post = get_first_basic_child(_(Post));
                     auto last_prevs = get_last_basic_children(_(Prev));
 
-                    cfg->add_predecessor(first_post, last_prevs);
-                    cfg->add_successor(last_prevs, first_post);
+					cfg->add_edge(last_prevs, first_post);
 
                     if (_(Post) / Stmt == Assign) {
                         auto ass = _(Post) / Stmt;
                         if ((ass / Rhs) / Expr == FunCall) {
-                            cfg->add_predecessor(ass, last_prevs);
-                            cfg->add_successor(last_prevs, ass);
+							cfg->add_edge(last_prevs, ass);
                         }
                     }
                     return NoChange;

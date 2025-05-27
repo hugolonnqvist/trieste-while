@@ -69,13 +69,9 @@ namespace whilelang {
 
         void add_var(Node ident);
 
-        void add_predecessor(const Node &node, const Node &prev);
-        void add_predecessor(const Node &node, const NodeSet &prev);
-        void add_predecessor(const NodeSet &node, const Node &prev);
-
-        void add_successor(const Node &node, const Node &prev);
-        void add_successor(const Node &node, const NodeSet &prev);
-        void add_successor(const NodeSet &node, const Node &prev);
+		void add_edge(const Node &u, const Node &v);
+		void add_edge(const Node &u, const NodeSet &v);
+		void add_edge(const NodeSet &u, const Node &v);
 
         void log_predecessors_and_successors();
         void log_instructions();

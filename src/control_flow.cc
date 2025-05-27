@@ -20,29 +20,19 @@ namespace whilelang {
         vars.insert(get_identifier(ident));
     };
 
-    void ControlFlow::add_predecessor(const Node &node, const Node &prev) {
-        append_to_nodemap(predecessor, node, prev);
+    void ControlFlow::add_edge(const Node &u, const Node &v) {
+        append_to_nodemap(successor, u, v);
+        append_to_nodemap(predecessor, v, u);
     }
 
-    void ControlFlow::add_predecessor(const Node &node, const NodeSet &prevs) {
-        append_to_nodemap(predecessor, node, prevs);
-    }
-
-    void ControlFlow::add_predecessor(const NodeSet &nodes, const Node &prev) {
-        append_to_nodemap(predecessor, nodes, prev);
-    }
-
-    void ControlFlow::add_successor(const Node &node, const Node &succ) {
-        append_to_nodemap(successor, node, succ);
-    }
-
-    void ControlFlow::add_successor(const Node &node, const NodeSet &succ) {
-        append_to_nodemap(successor, node, succ);
-    }
-
-    void ControlFlow::add_successor(const NodeSet &nodes, const Node &succ) {
-        append_to_nodemap(successor, nodes, succ);
-    }
+    void ControlFlow::add_edge(const Node &u, const NodeSet &v) {
+		append_to_nodemap(successor, u, v);
+        append_to_nodemap(predecessor, v, u);
+	}
+    void ControlFlow::add_edge(const NodeSet &u, const Node &v) {
+        append_to_nodemap(successor, u, v);
+        append_to_nodemap(predecessor, v, u);
+	}
 
     // Fill the map with function calls to their definitions
     void ControlFlow::set_functions_calls(
