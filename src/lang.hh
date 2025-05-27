@@ -10,6 +10,7 @@ namespace whilelang {
         bool run_mermaid);
     Rewriter interpret();
     Rewriter optimization_analysis(bool run_zero_analysis);
+    Rewriter inlining_rewriter();
 
     // Program
     inline const auto Program = TokenDef("program");
@@ -97,4 +98,5 @@ namespace whilelang {
     inline const auto Normalize = TokenDef("normalize");
     inline const auto Atom = TokenDef("atom");
     inline const auto Instructions = TokenDef("instructions");
+	inline const auto Inlining = TokenDef("inlining");
 }

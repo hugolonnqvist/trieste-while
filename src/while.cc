@@ -22,6 +22,7 @@ int main(int argc, char const *argv[]) {
     bool run_zero_analysis = false;
     bool run_gather_stats = false;
     bool run_mermaid = false;
+    bool run_inlining = false;
     app.add_flag("-r,--run", run, "Run the program (prompting inputs).");
     app.add_flag(
         "-s,--static-analysis",
@@ -42,6 +43,8 @@ int main(int argc, char const *argv[]) {
         run_mermaid,
         "Runs the mermaid pass which parses the final AST into mermaid "
         "format ");
+
+    app.add_flag("-i", run_inlining, "Enables the inlining optimization.");
     try {
         app.parse(argc, argv);
     } catch (const CLI::ParseError &e) {
@@ -49,8 +52,8 @@ int main(int argc, char const *argv[]) {
     }
 
     auto vars_map = std::make_shared<std::map<std::string, std::string>>();
-    auto reader =
-        whilelang::reader(vars_map, run_gather_stats, run_mermaid).file(input_path);
+    auto reader = whilelang::reader(vars_map, run_gather_stats, run_mermaid)
+                      .file(input_path);
 
     try {
         auto program_empty = [](trieste::Node ast) -> bool {
@@ -58,6 +61,10 @@ int main(int argc, char const *argv[]) {
         };
 
         auto result = reader.read();
+
+        if (run_inlining) {
+            result = result >> whilelang::inlining_rewriter();
+        }
 
         if (run_static_analysis) {
             do {

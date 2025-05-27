@@ -1,0 +1,11 @@
+fun foo() {
+	return bar();
+}
+
+fun bar() {
+	return foo();
+}
+
+fun main() {
+	output foo();
+}

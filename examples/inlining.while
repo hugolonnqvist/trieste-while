@@ -1,0 +1,17 @@
+fun square(x) {
+	return x * x;
+}
+
+fun foo(x) {
+	if x < 0 then return 0 - x else return x;
+}
+
+fun bar(x) {
+	return square(x);
+}
+
+fun main() {
+	output foo(0 - 3);
+	output bar(4);
+	output bar(16);
+}

@@ -1,14 +1,18 @@
-fun main() {
-	var x;
+fun fact(x) {
 	var i;
+	var res;
 
-	x := 1;
-	i := input;
+	res := 1;
+	i := x;
 
 	while 0 < i do {
-	  x := i * x;
+	  res := i * res;
 	  i := i - 1;
 	};
 
-	output x;
+	return res;
+}
+
+fun main() {
+	output(fact(4));
 }
