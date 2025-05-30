@@ -4,7 +4,7 @@
 
 namespace whilelang {
     using State = Vars;
-    using StateTable = DataFlowAnalysis<State, std::string>::StateTable;
+    using StateTable = DataFlowAnalysis<Vars, std::string>::StateTable;
 
     inline bool live_state_join(State &s1, const State &s2) {
         bool changed = s1 != s2;
@@ -38,8 +38,9 @@ namespace whilelang {
             auto defs = Vars();
 
             for (auto arg : *args) {
-                if ((arg / Atom) / Expr == Ident) {
-                    auto var = get_identifier((arg / Atom) / Expr);
+                auto arg_expr = (arg / Atom) / Expr;
+                if (arg_expr == Ident) {
+                    auto var = get_identifier(arg_expr);
                     defs.insert(var);
                 }
             }
@@ -59,11 +60,10 @@ namespace whilelang {
         Vars gen_defs = {};
 
         if (inst == Assign) {
-            auto ident = inst / Ident;
-            auto aexpr = inst / Rhs;
-            auto var = get_identifier(ident);
+            auto rhs = inst / Rhs;
+            auto var = get_identifier(inst / Ident);
 
-            gen_defs = get_aexpr_defs((inst / Rhs) / Expr);
+            gen_defs = get_aexpr_defs(rhs / Expr);
 
             new_defs.erase(var);
         } else if (inst->type().in({Output, Return})) {

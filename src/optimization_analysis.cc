@@ -14,12 +14,14 @@ namespace whilelang {
                 gather_functions(cfg),
                 gather_instructions(cfg),
                 gather_flow_graph(cfg),
+
                 z_analysis(cfg).cond(run_zero),
                 constant_folding(cfg),
 
                 gather_functions(cfg).cond(cfg_is_dirty),
                 gather_instructions(cfg).cond(cfg_is_dirty),
                 gather_flow_graph(cfg).cond(cfg_is_dirty),
+
                 dead_code_elimination(cfg),
                 dead_code_cleanup(),
             },

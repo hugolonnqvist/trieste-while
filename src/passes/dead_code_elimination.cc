@@ -8,16 +8,19 @@ namespace whilelang {
 
     std::optional<bool> get_bexpr_value(Node bexpr) {
         auto expr = bexpr / Expr;
+
         if (expr->type().in({True, False})) {
             return expr == True ? true : false;
         } else if (expr == And) {
             bool res = true;
+
             for (auto &child : *expr) {
                 res = res && get_bexpr_value(child);
             }
             return res;
         } else if (expr == Or) {
             bool res = false;
+
             for (auto &child : *expr) {
                 res = res || get_bexpr_value(child);
             }
@@ -118,7 +121,7 @@ namespace whilelang {
                         }
                     },
 
-                    T(Stmt) << (T(While) << (T(BExpr)[BExpr] * T(Stmt)[Do])) >>
+                    T(Stmt) << (T(While) << T(BExpr)[BExpr]) >>
                         [=](Match &_) -> Node {
                         auto bexpr = _(BExpr);
                         auto bexpr_value = get_bexpr_value(bexpr);

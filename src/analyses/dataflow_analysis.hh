@@ -10,8 +10,9 @@ namespace whilelang {
     template<typename State, typename LatticeValue>
     class DataFlowAnalysis {
       public:
-        using StateTable = std::unordered_map<Node, State>;
+        using StateTable = NodeMap<State>;
         using CreateStateFn = std::function<State(const Vars &)>;
+
         // Joins the two state and stores the result in the first one. Returns a
         // bool stating if the resulting state is changed
         using StateJoinFn = std::function<bool(State &, const State &)>;
@@ -22,10 +23,9 @@ namespace whilelang {
             CreateStateFn create_state, StateJoinFn state_join, FlowFn flow);
 
         LatticeValue
-        get_lattice_value(const Node &inst, const std::string &var);
-
-        State built_in_join(const State x, const State y);
-        bool built_in_join_mut(State &x, const State y);
+        get_lattice_value(const Node &inst, const std::string &var) {
+            return state_table[inst][var];
+        }
 
         const State get_state(const Node &instruction) {
             return state_table[instruction];
@@ -41,11 +41,9 @@ namespace whilelang {
 
       private:
         StateTable state_table;
-        CreateStateFn create_state_fn;
-        StateJoinFn state_join_fn;
-        FlowFn flow_fn;
-
-        bool state_equals(State x, State y);
+        CreateStateFn create_state;
+        StateJoinFn state_join;
+        FlowFn flow;
 
         void init_state_table(
             const Nodes &instructions,
@@ -56,11 +54,13 @@ namespace whilelang {
 
     template<typename State, typename LatticeValue>
     DataFlowAnalysis<State, LatticeValue>::DataFlowAnalysis(
-        CreateStateFn create_state, StateJoinFn state_join, FlowFn flow) {
+        CreateStateFn create_state_fn,
+        StateJoinFn state_join_fn,
+        FlowFn flow_fn) {
         this->state_table = StateTable();
-        this->create_state_fn = create_state;
-        this->state_join_fn = state_join;
-        this->flow_fn = flow;
+        this->create_state = create_state_fn;
+        this->state_join = state_join_fn;
+        this->flow = flow_fn;
     }
 
     template<typename State, typename LatticeValue>
@@ -74,16 +74,10 @@ namespace whilelang {
         }
 
         for (const auto &inst : instructions) {
-            state_table.insert({inst, this->create_state_fn(vars)});
+            state_table.insert({inst, this->create_state(vars)});
         }
 
         state_table[program_start] = first_state;
-    }
-
-    template<typename State, typename LatticeValue>
-    LatticeValue DataFlowAnalysis<State, LatticeValue>::get_lattice_value(
-        const Node &inst, const std::string &var) {
-        return state_table[inst][var];
     }
 
     template<typename State, typename LatticeValue>
@@ -100,12 +94,11 @@ namespace whilelang {
             Node inst = worklist.front();
             worklist.pop_front();
 
-            State out_state = flow_fn(inst, state_table, cfg);
+            State out_state = flow(inst, state_table, cfg);
             state_table[inst] = out_state;
 
             for (Node succ : cfg->successors(inst)) {
-                bool changed =
-                    this->state_join_fn(state_table[succ], out_state);
+                bool changed = this->state_join(state_table[succ], out_state);
 
                 if (changed) {
                     worklist.push_back(succ);
@@ -127,11 +120,11 @@ namespace whilelang {
             Node inst = worklist.front();
             worklist.pop_front();
 
-            Vars in_state = flow_fn(inst, state_table, cfg);
+            Vars in_state = flow(inst, state_table, cfg);
 
             for (Node pred : cfg->predecessors(inst)) {
                 Vars &succ_state = state_table[pred];
-                bool changed = state_join_fn(succ_state, in_state);
+                bool changed = state_join(succ_state, in_state);
 
                 if (changed) {
                     worklist.push_back(pred);

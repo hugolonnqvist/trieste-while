@@ -16,6 +16,15 @@ namespace whilelang {
         this->dirty_flag = false;
     }
 
+    void ControlFlow::clear() {
+        instructions.clear();
+        vars.clear();
+        predecessor.clear();
+        successor.clear();
+        fun_call_to_def.clear();
+        fun_def_to_calls.clear();
+    }
+
     void ControlFlow::add_var(Node ident) {
         vars.insert(get_identifier(ident));
     };
@@ -26,13 +35,13 @@ namespace whilelang {
     }
 
     void ControlFlow::add_edge(const Node &u, const NodeSet &v) {
-		append_to_nodemap(successor, u, v);
+        append_to_nodemap(successor, u, v);
         append_to_nodemap(predecessor, v, u);
-	}
+    }
     void ControlFlow::add_edge(const NodeSet &u, const Node &v) {
         append_to_nodemap(successor, u, v);
         append_to_nodemap(predecessor, v, u);
-	}
+    }
 
     // Fill the map with function calls to their definitions
     void ControlFlow::set_functions_calls(

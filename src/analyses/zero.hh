@@ -13,6 +13,26 @@ namespace whilelang {
             return type == other.type;
         }
 
+        inline ZeroLatticeValue
+        lattice_join(const ZeroLatticeValue &other) const {
+            auto top = ZeroLatticeValue::top();
+            auto zero = ZeroLatticeValue::zero();
+            auto non_zero = ZeroLatticeValue::non_zero();
+            auto bottom = ZeroLatticeValue::bottom();
+
+            if (*this == bottom) {
+                return other;
+            } else if (other == bottom) {
+                return *this;
+            } else if (*this == zero && other == zero) {
+                return zero;
+            } else if (*this == non_zero && other == non_zero) {
+                return non_zero;
+            }
+
+            return top;
+        }
+
         friend std::ostream &
         operator<<(std::ostream &os, const ZeroLatticeValue &value) {
             switch (value.type) {
@@ -49,13 +69,6 @@ namespace whilelang {
     using State = std::unordered_map<std::string, ZeroLatticeValue>;
     using StateTable = DataFlowAnalysis<State, ZeroLatticeValue>::StateTable;
 
-    inline std::ostream &operator<<(std::ostream &os, const State &state) {
-        for (const auto &[_, value] : state) {
-            os << std::setw(PRINT_WIDTH) << value;
-        }
-        return os;
-    }
-
     inline State zero_create_state(const Vars &vars) {
         State state = State();
 
@@ -78,34 +91,6 @@ namespace whilelang {
         }
     };
 
-    inline ZeroLatticeValue
-    lattice_join(const ZeroLatticeValue &x, const ZeroLatticeValue &y) {
-        auto top = ZeroLatticeValue::top();
-        auto zero = ZeroLatticeValue::zero();
-        auto non_zero = ZeroLatticeValue::non_zero();
-        auto bottom = ZeroLatticeValue::bottom();
-
-        if (x == bottom) {
-            return y;
-        }
-        if (y == bottom) {
-            return x;
-        }
-
-        if (x == top || y == top) {
-            return top;
-        }
-
-        if (x == zero && y == zero) {
-            return zero;
-        }
-        if (x == non_zero && y == non_zero) {
-            return non_zero;
-        }
-
-        return top;
-    }
-
     inline bool zero_state_join(State &x, const State &y) {
         bool changed = false;
 
@@ -113,8 +98,9 @@ namespace whilelang {
             auto res = x.find(key);
 
             if (res != x.end()) {
-                auto join_res = lattice_join(res->second, val_y);
-                if (!(res->second == join_res)) {
+                auto join_res = res->second.lattice_join(val_y);
+
+                if (res->second != join_res) {
                     x[key] = join_res;
                     changed = true;
                 }
@@ -143,8 +129,7 @@ namespace whilelang {
 
                 for (auto node : prevs) {
                     if (node == Return) {
-                        val = lattice_join(
-                            val,
+                        val = val.lattice_join(
                             handle_atom((node / Atom) / Expr, incoming_state));
                     }
                 }
@@ -169,4 +154,10 @@ namespace whilelang {
         return incoming_state;
     }
 
+    inline std::ostream &operator<<(std::ostream &os, const State &state) {
+        for (const auto &[_, value] : state) {
+            os << std::setw(PRINT_WIDTH) << value;
+        }
+        return os;
+    }
 }

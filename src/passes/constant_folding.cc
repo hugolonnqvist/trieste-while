@@ -13,6 +13,7 @@ namespace whilelang {
 
         auto fetch_instruction = [=](const Node &n) -> Node {
             auto curr = n;
+
             while (!curr->type().in(
                 {Assign, BExpr, FunCall, FunDef, Output, Return})) {
                 curr = curr->parent();

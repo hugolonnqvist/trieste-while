@@ -28,7 +28,8 @@ namespace whilelang {
                 return other;
             } else if (other.type == bottom) {
                 return *this;
-            } else if (this->type == constant && other.type == constant &&
+            } else if (
+                this->type == constant && other.type == constant &&
                 this->value == other.value) {
                 return *this;
             }
@@ -118,11 +119,13 @@ namespace whilelang {
 
     inline bool cp_state_join(State &x, const State &y) {
         bool changed = false;
+
         for (const auto &[key, val_y] : y) {
             auto res = x.find(key);
             if (res != x.end()) {
                 auto join_res = res->second.join(val_y);
-                if (!(res->second == join_res)) {
+
+                if (res->second != join_res) {
                     x[key] = join_res;
                     changed = true;
                 }

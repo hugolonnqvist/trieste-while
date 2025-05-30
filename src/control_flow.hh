@@ -10,14 +10,7 @@ namespace whilelang {
       public:
         ControlFlow();
 
-        void clear() {
-            instructions.clear();
-            vars.clear();
-            predecessor.clear();
-            successor.clear();
-            fun_call_to_def.clear();
-            fun_def_to_calls.clear();
-        }
+		void clear();
 
         inline const NodeSet &successors(const Node &node) {
             return successor[node];
