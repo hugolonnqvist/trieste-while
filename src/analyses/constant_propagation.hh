@@ -20,7 +20,7 @@ namespace whilelang {
             return false;
         }
 
-        inline CPLatticeValue join(const CPLatticeValue &other) const {
+        CPLatticeValue join(const CPLatticeValue &other) const {
             auto constant = CPAbstractType::Constant;
             auto bottom = CPAbstractType::Bottom;
 
@@ -73,13 +73,14 @@ namespace whilelang {
     using State = std::unordered_map<std::string, CPLatticeValue>;
     using StateTable = DataFlowAnalysis<State, CPLatticeValue>::StateTable;
 
-    inline std::ostream &operator<<(std::ostream &os, const State &state) {
+    std::ostream &operator<<(std::ostream &os, const State &state) {
         for (const auto &[_, value] : state) {
             os << std::setw(PRINT_WIDTH) << value;
         }
         return os;
     }
-    inline State cp_create_state(const Vars &vars) {
+
+    State cp_create_state(const Vars &vars) {
         State state = State();
 
         for (auto var : vars) {
@@ -88,7 +89,7 @@ namespace whilelang {
         return state;
     }
 
-    inline CPLatticeValue atom_flow_helper(Node inst, State incoming_state) {
+    CPLatticeValue atom_flow_helper(Node inst, State incoming_state) {
         if (inst == Atom) {
             Node expr = inst / Expr;
 
@@ -103,7 +104,7 @@ namespace whilelang {
         return CPLatticeValue::top();
     }
 
-    inline auto apply_arith_op = [](Node op, int x, int y) {
+    auto apply_arith_op = [](Node op, int x, int y) {
         if (op == Add) {
             return x + y;
         } else if (op == Sub) {
@@ -117,7 +118,7 @@ namespace whilelang {
         }
     };
 
-    inline bool cp_state_join(State &x, const State &y) {
+    bool cp_state_join(State &x, const State &y) {
         bool changed = false;
 
         for (const auto &[key, val_y] : y) {
@@ -136,7 +137,7 @@ namespace whilelang {
         return changed;
     }
 
-    inline State cp_flow(
+    State cp_flow(
         const Node &inst,
         StateTable &state_table,
         std::shared_ptr<ControlFlow> cfg) {
@@ -210,7 +211,7 @@ namespace whilelang {
         return incoming_state;
     }
 
-    inline State cp_first_state(std::shared_ptr<ControlFlow> cfg) {
+    State cp_first_state(std::shared_ptr<ControlFlow> cfg) {
         auto first_state = State();
 
         for (auto var : cfg->get_vars()) {

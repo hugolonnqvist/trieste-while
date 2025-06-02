@@ -29,7 +29,7 @@ namespace whilelang {
                 In(Atom) * T(Ident)[Ident] >> [=](Match &_) -> Node {
                     auto inst = fetch_instruction(_(Ident));
                     auto var = get_identifier(_(Ident));
-                    auto lattice_value = analysis->get_lattice_value(inst, var);
+                    auto lattice_value = analysis->get_state(inst)[var];
 
                     if (lattice_value.type == CPAbstractType::Constant) {
                         cfg->set_dirty_flag(true);

@@ -44,6 +44,7 @@ namespace whilelang {
                 normalization_wf,
                 dir::bottomup | dir::once,
                 {
+					// Remove unused functions
                     T(FunDef)[FunDef] >> [=](Match &_) -> Node {
                         auto fun_id = (_(FunDef) / FunId) / Ident;
 
@@ -54,6 +55,7 @@ namespace whilelang {
                         return NoChange;
                     },
 
+                    // Remove unused variables 
                     T(Stmt)
                             << (T(Assign)[Assign]
                                 << (T(Ident)[Ident] * T(AExpr)[AExpr])) >>
@@ -68,21 +70,24 @@ namespace whilelang {
                         }
                     },
 
+                    // Remove empty blocks
                     T(Stmt)[Stmt] << (T(Block)[Block] << End) >>
                         [](Match &_) -> Node {
                         if (_(Stmt)->parent()->in({If, While, FunDef})) {
-                            // Make sure fun defs and if & while statements
+                            // Make sure fun defs, if and while statements
                             // don't have their body removed
                             return Stmt << (Block << (Stmt << Skip));
                         }
                         return {};
                     },
 
+                    // Remove sequences of skip statements
                     In(Block) *
                             ((Any[Stmt] * (T(Stmt) << T(Skip))) /
                              ((T(Stmt) << T(Skip)) * Any[Stmt])) >>
                         [](Match &_) -> Node { return Reapply << _(Stmt); },
 
+                    // Try to evaluate relational expressions
                     In(BExpr) * T(LT, Equals)[Op] >> [=](Match &_) -> Node {
                         auto op = _(Op);
 
@@ -101,7 +106,8 @@ namespace whilelang {
 
                         return NoChange;
                     },
-
+                    
+                    // Try to determine branching of if statements
                     T(Stmt)
                             << (T(If)
                                 << (T(BExpr)[BExpr] * T(Stmt)[Then] *
@@ -120,7 +126,8 @@ namespace whilelang {
                             return NoChange;
                         }
                     },
-
+                    
+                    // Try to determine branching of while statements
                     T(Stmt) << (T(While) << T(BExpr)[BExpr]) >>
                         [=](Match &_) -> Node {
                         auto bexpr = _(BExpr);

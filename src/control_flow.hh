@@ -10,7 +10,7 @@ namespace whilelang {
       public:
         ControlFlow();
 
-		void clear();
+        void clear();
 
         inline const NodeSet &successors(const Node &node) {
             return successor[node];
@@ -62,9 +62,9 @@ namespace whilelang {
 
         void add_var(Node ident);
 
-		void add_edge(const Node &u, const Node &v);
-		void add_edge(const Node &u, const NodeSet &v);
-		void add_edge(const NodeSet &u, const Node &v);
+        void add_edge(const Node &u, const Node &v);
+        void add_edge(const Node &u, const NodeSet &v);
+        void add_edge(const NodeSet &u, const Node &v);
 
         void log_predecessors_and_successors();
         void log_instructions();
@@ -82,11 +82,11 @@ namespace whilelang {
         NodeMap<NodeSet> predecessor;
         NodeMap<NodeSet> successor;
 
-        inline void append_to_nodemap(
+        void append_to_nodemap(
             NodeMap<NodeSet> &map, const Node &key, const Node &value);
-        inline void append_to_nodemap(
+        void append_to_nodemap(
             NodeMap<NodeSet> &map, const Node &key, const NodeSet &values);
-        inline void append_to_nodemap(
+        void append_to_nodemap(
             NodeMap<NodeSet> &map, const NodeSet &nodes, const Node &prev);
     };
 }

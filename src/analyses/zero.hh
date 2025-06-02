@@ -13,8 +13,7 @@ namespace whilelang {
             return type == other.type;
         }
 
-        inline ZeroLatticeValue
-        lattice_join(const ZeroLatticeValue &other) const {
+        ZeroLatticeValue lattice_join(const ZeroLatticeValue &other) const {
             auto top = ZeroLatticeValue::top();
             auto zero = ZeroLatticeValue::zero();
             auto non_zero = ZeroLatticeValue::non_zero();
@@ -69,7 +68,7 @@ namespace whilelang {
     using State = std::unordered_map<std::string, ZeroLatticeValue>;
     using StateTable = DataFlowAnalysis<State, ZeroLatticeValue>::StateTable;
 
-    inline State zero_create_state(const Vars &vars) {
+    State zero_create_state(const Vars &vars) {
         State state = State();
 
         for (auto var : vars) {
@@ -78,8 +77,8 @@ namespace whilelang {
         return state;
     }
 
-    inline auto handle_atom = [](const Node atom,
-                                 State &incoming_state) -> ZeroLatticeValue {
+    auto handle_atom = [](const Node atom,
+                          State &incoming_state) -> ZeroLatticeValue {
         if (atom == Int) {
             return get_int_value(atom) == 0 ? ZeroLatticeValue::zero() :
                                               ZeroLatticeValue::non_zero();
@@ -91,7 +90,7 @@ namespace whilelang {
         }
     };
 
-    inline bool zero_state_join(State &x, const State &y) {
+    bool zero_state_join(State &x, const State &y) {
         bool changed = false;
 
         for (const auto &[key, val_y] : y) {
@@ -111,7 +110,7 @@ namespace whilelang {
         return changed;
     }
 
-    inline State zero_flow(
+    State zero_flow(
         const Node &inst,
         StateTable &state_table,
         std::shared_ptr<ControlFlow> cfg) {
@@ -154,7 +153,7 @@ namespace whilelang {
         return incoming_state;
     }
 
-    inline std::ostream &operator<<(std::ostream &os, const State &state) {
+    std::ostream &operator<<(std::ostream &os, const State &state) {
         for (const auto &[_, value] : state) {
             os << std::setw(PRINT_WIDTH) << value;
         }

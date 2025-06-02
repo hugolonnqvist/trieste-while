@@ -7,27 +7,31 @@
 namespace whilelang {
     using namespace trieste;
 
+    // The State represents the mapping of code information (typically
+    // variables) to the abstract values (LatticeValue)
     template<typename State, typename LatticeValue>
     class DataFlowAnalysis {
       public:
+        // Tracks a mapping from all program points to their corresponding state
         using StateTable = NodeMap<State>;
+
+        // Creates a state which has not yet been reached.
+        // Typically maps all variables to bottom
         using CreateStateFn = std::function<State(const Vars &)>;
 
         // Joins the two state and stores the result in the first one. Returns a
         // bool stating if the resulting state is changed
         using StateJoinFn = std::function<bool(State &, const State &)>;
+
+        // Executes the flow function on an instruction
+        // returning the resulting state
         using FlowFn = std::function<State(
             const Node &, StateTable &, std::shared_ptr<ControlFlow>)>;
 
         DataFlowAnalysis(
             CreateStateFn create_state, StateJoinFn state_join, FlowFn flow);
 
-        LatticeValue
-        get_lattice_value(const Node &inst, const std::string &var) {
-            return state_table[inst][var];
-        }
-
-        const State get_state(const Node &instruction) {
+        State get_state(const Node &instruction) {
             return state_table[instruction];
         };
 
@@ -37,6 +41,7 @@ namespace whilelang {
         void backward_worklist_algoritm(
             std::shared_ptr<ControlFlow> cfg, State first_state);
 
+        // Requires that the << operator has been specified for the State type
         void log_state_table(std::shared_ptr<ControlFlow> cfg);
 
       private:
@@ -120,10 +125,10 @@ namespace whilelang {
             Node inst = worklist.front();
             worklist.pop_front();
 
-            Vars in_state = flow(inst, state_table, cfg);
+            State in_state = flow(inst, state_table, cfg);
 
             for (Node pred : cfg->predecessors(inst)) {
-                Vars &succ_state = state_table[pred];
+                State &succ_state = state_table[pred];
                 bool changed = state_join(succ_state, in_state);
 
                 if (changed) {
@@ -151,9 +156,8 @@ namespace whilelang {
                     << std::endl;
 
         for (size_t i = 0; i < instructions.size(); i++) {
-            str_builder << std::setw(PRINT_WIDTH) << i + 1;
-            str_builder << state_table[instructions[i]];
-            str_builder << '\n';
+            str_builder << std::setw(PRINT_WIDTH) << i + 1
+                        << state_table[instructions[i]] << '\n';
         }
         logging::Debug() << str_builder.str();
     }
