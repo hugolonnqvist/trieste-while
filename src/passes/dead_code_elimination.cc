@@ -35,8 +35,8 @@ namespace whilelang {
     auto bool_to_bexpr = [](bool v) -> Node { return v ? True : False; };
 
     PassDef dead_code_elimination(std::shared_ptr<ControlFlow> cfg) {
-        auto liveness = std::make_shared<DataFlowAnalysis<State, std::string>>(
-            live_create_state, live_state_join, live_flow);
+        auto analysis = std::make_shared<
+            DataFlowAnalysis<LiveState, std::string, LiveImpl>>();
 
         PassDef dead_code_elimination =
             {
@@ -44,7 +44,7 @@ namespace whilelang {
                 normalization_wf,
                 dir::bottomup | dir::once,
                 {
-					// Remove unused functions
+                    // Remove unused functions
                     T(FunDef)[FunDef] >> [=](Match &_) -> Node {
                         auto fun_id = (_(FunDef) / FunId) / Ident;
 
@@ -55,7 +55,7 @@ namespace whilelang {
                         return NoChange;
                     },
 
-                    // Remove unused variables 
+                    // Remove unused variables
                     T(Stmt)
                             << (T(Assign)[Assign]
                                 << (T(Ident)[Ident] * T(AExpr)[AExpr])) >>
@@ -63,7 +63,7 @@ namespace whilelang {
                         auto id = get_identifier(_(Ident));
                         auto assign = _(Assign);
 
-                        if (liveness->get_state(assign).contains(id)) {
+                        if (analysis->get_state(assign).contains(id)) {
                             return NoChange;
                         } else {
                             return {};
@@ -106,7 +106,7 @@ namespace whilelang {
 
                         return NoChange;
                     },
-                    
+
                     // Try to determine branching of if statements
                     T(Stmt)
                             << (T(If)
@@ -126,7 +126,7 @@ namespace whilelang {
                             return NoChange;
                         }
                     },
-                    
+
                     // Try to determine branching of while statements
                     T(Stmt) << (T(While) << T(BExpr)[BExpr]) >>
                         [=](Match &_) -> Node {
@@ -147,12 +147,12 @@ namespace whilelang {
                 }};
 
         dead_code_elimination.pre([=](Node) {
-            State first_state = {};
+            LiveState first_state = {};
 
-            liveness->backward_worklist_algoritm(cfg, first_state);
+            analysis->backward_worklist_algoritm(cfg, first_state);
 
             cfg->log_instructions();
-            log_liveness(cfg, liveness);
+            // analysis->log_state_table(cfg);
 
             return 0;
         });

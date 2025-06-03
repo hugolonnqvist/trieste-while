@@ -70,26 +70,9 @@ namespace whilelang {
         }
     };
 
-    using State = std::unordered_map<std::string, CPLatticeValue>;
-    using StateTable = DataFlowAnalysis<State, CPLatticeValue>::StateTable;
+    using CPState = std::unordered_map<std::string, CPLatticeValue>;
 
-    std::ostream &operator<<(std::ostream &os, const State &state) {
-        for (const auto &[_, value] : state) {
-            os << std::setw(PRINT_WIDTH) << value;
-        }
-        return os;
-    }
-
-    State cp_create_state(const Vars &vars) {
-        State state = State();
-
-        for (auto var : vars) {
-            state[var] = CPLatticeValue::bottom();
-        }
-        return state;
-    }
-
-    CPLatticeValue atom_flow_helper(Node inst, State incoming_state) {
+    CPLatticeValue atom_flow_helper(Node inst, CPState incoming_state) {
         if (inst == Atom) {
             Node expr = inst / Expr;
 
@@ -104,7 +87,7 @@ namespace whilelang {
         return CPLatticeValue::top();
     }
 
-    auto apply_arith_op = [](Node op, int x, int y) {
+    int apply_arith_op(Node op, int x, int y) {
         if (op == Add) {
             return x + y;
         } else if (op == Sub) {
@@ -118,105 +101,129 @@ namespace whilelang {
         }
     };
 
-    bool cp_state_join(State &x, const State &y) {
-        bool changed = false;
-
-        for (const auto &[key, val_y] : y) {
-            auto res = x.find(key);
-            if (res != x.end()) {
-                auto join_res = res->second.join(val_y);
-
-                if (res->second != join_res) {
-                    x[key] = join_res;
-                    changed = true;
-                }
-            } else {
-                throw std::runtime_error("State do not have the same keys");
-            }
-        }
-        return changed;
-    }
-
-    State cp_flow(
-        const Node &inst,
-        StateTable &state_table,
-        std::shared_ptr<ControlFlow> cfg) {
-        auto incoming_state = state_table[inst];
-
-        if (inst == Assign) {
-            std::string var = get_identifier(inst / Ident);
-
-            auto expr = (inst / Rhs) / Expr;
-            if (expr == Atom) {
-                incoming_state[var] = atom_flow_helper(expr, incoming_state);
-            } else if (expr->type().in({Add, Sub, Mul})) {
-                Node lhs = expr / Lhs;
-                Node rhs = expr / Rhs;
-
-                auto lhs_value = atom_flow_helper(lhs, incoming_state);
-                auto rhs_value = atom_flow_helper(rhs, incoming_state);
-
-                if (lhs_value.type == CPAbstractType::Constant &&
-                    rhs_value.type == CPAbstractType::Constant) {
-                    auto op_result = apply_arith_op(
-                        expr, *lhs_value.value, *rhs_value.value);
-                    incoming_state[var] = CPLatticeValue::constant(op_result);
-                } else {
-                    incoming_state[var] = CPLatticeValue::top();
-                }
-            } else {
-                // Is function call
-                auto prevs = cfg->predecessors(inst);
-                CPLatticeValue val = CPLatticeValue::bottom();
-
-                // Join result of all return statements
-                for (auto prev : prevs) {
-                    if (prev == Return) {
-                        val = val.join(
-                            atom_flow_helper(prev / Atom, state_table[prev]));
-                    }
-                }
-                auto pre_fun_call_state = state_table[expr];
-                pre_fun_call_state[var] = val;
-                return pre_fun_call_state;
-            }
-        } else if (inst == FunCall) {
-            auto params = cfg->get_fun_def(inst) / ParamList;
-            auto args = inst / ArgList;
-
-            for (size_t i = 0; i < params->size(); i++) {
-                auto param_id = params->at(i) / Ident;
-
-                auto var_dec = get_identifier(param_id);
-                auto arg = args->at(i) / Atom;
-
-                incoming_state[var_dec] = atom_flow_helper(arg, incoming_state);
-            }
-        } else if (
-            inst == FunDef &&
-            get_identifier((inst / FunId) / Ident) != "main") {
-            auto params = inst / ParamList;
-
-            auto param_vars = Vars();
-            for (auto param : *params) {
-                param_vars.insert(get_identifier(param / Ident));
-            }
-
-            for (auto &[key, val] : incoming_state) {
-                if (!param_vars.contains(key)) {
-                    incoming_state[key] = CPLatticeValue::bottom();
-                }
-            }
-        }
-        return incoming_state;
-    }
-
-    State cp_first_state(std::shared_ptr<ControlFlow> cfg) {
-        auto first_state = State();
+    CPState cp_first_state(std::shared_ptr<ControlFlow> cfg) {
+        auto first_state = CPState();
 
         for (auto var : cfg->get_vars()) {
             first_state[var] = CPLatticeValue::top();
         }
         return first_state;
+    }
+
+    struct CPImpl {
+        using StateTable =
+            DataFlowAnalysis<CPState, CPLatticeValue, CPImpl>::StateTable;
+
+        static CPState create_state(const Vars &vars) {
+            CPState state = CPState();
+
+            for (auto var : vars) {
+                state[var] = CPLatticeValue::bottom();
+            }
+            return state;
+        }
+
+        static bool state_join(CPState &x, const CPState &y) {
+            bool changed = false;
+
+            for (const auto &[key, val_y] : y) {
+                auto res = x.find(key);
+                if (res != x.end()) {
+                    auto join_res = res->second.join(val_y);
+
+                    if (res->second != join_res) {
+                        x[key] = join_res;
+                        changed = true;
+                    }
+                } else {
+                    throw std::runtime_error("State do not have the same keys");
+                }
+            }
+            return changed;
+        }
+
+        static CPState flow(
+            const Node &inst,
+            StateTable &state_table,
+            std::shared_ptr<ControlFlow> cfg) {
+            auto incoming_state = state_table[inst];
+
+            if (inst == Assign) {
+                std::string var = get_identifier(inst / Ident);
+
+                auto expr = (inst / Rhs) / Expr;
+                if (expr == Atom) {
+                    incoming_state[var] =
+                        atom_flow_helper(expr, incoming_state);
+                } else if (expr->type().in({Add, Sub, Mul})) {
+                    Node lhs = expr / Lhs;
+                    Node rhs = expr / Rhs;
+
+                    auto lhs_value = atom_flow_helper(lhs, incoming_state);
+                    auto rhs_value = atom_flow_helper(rhs, incoming_state);
+
+                    if (lhs_value.type == CPAbstractType::Constant &&
+                        rhs_value.type == CPAbstractType::Constant) {
+                        auto op_result = apply_arith_op(
+                            expr, *lhs_value.value, *rhs_value.value);
+                        incoming_state[var] =
+                            CPLatticeValue::constant(op_result);
+                    } else {
+                        incoming_state[var] = CPLatticeValue::top();
+                    }
+                } else {
+                    // Is function call
+                    auto prevs = cfg->predecessors(inst);
+                    CPLatticeValue val = CPLatticeValue::bottom();
+
+                    // Join result of all return statements
+                    for (auto prev : prevs) {
+                        if (prev == Return) {
+                            val = val.join(atom_flow_helper(
+                                prev / Atom, state_table[prev]));
+                        }
+                    }
+                    auto pre_fun_call_state = state_table[expr];
+                    pre_fun_call_state[var] = val;
+                    return pre_fun_call_state;
+                }
+            } else if (inst == FunCall) {
+                auto params = cfg->get_fun_def(inst) / ParamList;
+                auto args = inst / ArgList;
+
+                for (size_t i = 0; i < params->size(); i++) {
+                    auto param_id = params->at(i) / Ident;
+
+                    auto var_dec = get_identifier(param_id);
+                    auto arg = args->at(i) / Atom;
+
+                    incoming_state[var_dec] =
+                        atom_flow_helper(arg, incoming_state);
+                }
+            } else if (
+                inst == FunDef &&
+                get_identifier((inst / FunId) / Ident) != "main") {
+                auto params = inst / ParamList;
+
+                auto param_vars = Vars();
+                for (auto param : *params) {
+                    param_vars.insert(get_identifier(param / Ident));
+                }
+
+                for (auto &[key, val] : incoming_state) {
+                    if (!param_vars.contains(key)) {
+                        incoming_state[key] = CPLatticeValue::bottom();
+                    }
+                }
+            }
+            return incoming_state;
+        }
+    };
+
+    std::ostream &operator<<(std::ostream &os, const CPState &state) {
+        for (const auto &[_, value] : state) {
+            os << std::setw(PRINT_WIDTH) << value;
+        }
+        return os;
     }
 }

@@ -7,9 +7,11 @@
 namespace whilelang {
     using namespace trieste;
 
+    // struct Implementation {};
+
     // The State represents the mapping of code information (typically
     // variables) to the abstract values (LatticeValue)
-    template<typename State, typename LatticeValue>
+    template<typename State, typename LatticeValue, typename Impl>
     class DataFlowAnalysis {
       public:
         // Tracks a mapping from all program points to their corresponding state
@@ -17,19 +19,19 @@ namespace whilelang {
 
         // Creates a state which has not yet been reached.
         // Typically maps all variables to bottom
-        using CreateStateFn = std::function<State(const Vars &)>;
+        // using CreateStateFn = std::function<State(const Vars &)>;
+        //
+        // // Joins the two state and stores the result in the first one.
+        // Returns a
+        // // bool stating if the resulting state is changed
+        // using StateJoinFn = std::function<bool(State &, const State &)>;
+        //
+        // // Executes the flow function on an instruction
+        // // returning the resulting state
+        // using FlowFn = std::function<State(
+        //     const Node &, StateTable &, std::shared_ptr<ControlFlow>)>;
 
-        // Joins the two state and stores the result in the first one. Returns a
-        // bool stating if the resulting state is changed
-        using StateJoinFn = std::function<bool(State &, const State &)>;
-
-        // Executes the flow function on an instruction
-        // returning the resulting state
-        using FlowFn = std::function<State(
-            const Node &, StateTable &, std::shared_ptr<ControlFlow>)>;
-
-        DataFlowAnalysis(
-            CreateStateFn create_state, StateJoinFn state_join, FlowFn flow);
+        DataFlowAnalysis();
 
         State get_state(const Node &instruction) {
             return state_table[instruction];
@@ -46,9 +48,6 @@ namespace whilelang {
 
       private:
         StateTable state_table;
-        CreateStateFn create_state;
-        StateJoinFn state_join;
-        FlowFn flow;
 
         void init_state_table(
             const Nodes &instructions,
@@ -57,19 +56,13 @@ namespace whilelang {
             State first_state);
     };
 
-    template<typename State, typename LatticeValue>
-    DataFlowAnalysis<State, LatticeValue>::DataFlowAnalysis(
-        CreateStateFn create_state_fn,
-        StateJoinFn state_join_fn,
-        FlowFn flow_fn) {
+    template<typename State, typename LatticeValue, typename Impl>
+    DataFlowAnalysis<State, LatticeValue, Impl>::DataFlowAnalysis() {
         this->state_table = StateTable();
-        this->create_state = create_state_fn;
-        this->state_join = state_join_fn;
-        this->flow = flow_fn;
     }
 
-    template<typename State, typename LatticeValue>
-    void DataFlowAnalysis<State, LatticeValue>::init_state_table(
+    template<typename State, typename LatticeValue, typename Impl>
+    void DataFlowAnalysis<State, LatticeValue, Impl>::init_state_table(
         const Nodes &instructions,
         const Vars &vars,
         const Node &program_start,
@@ -79,14 +72,14 @@ namespace whilelang {
         }
 
         for (const auto &inst : instructions) {
-            state_table.insert({inst, this->create_state(vars)});
+            state_table.insert({inst, Impl::create_state(vars)});
         }
 
         state_table[program_start] = first_state;
     }
 
-    template<typename State, typename LatticeValue>
-    void DataFlowAnalysis<State, LatticeValue>::forward_worklist_algoritm(
+    template<typename State, typename LatticeValue, typename Impl>
+    void DataFlowAnalysis<State, LatticeValue, Impl>::forward_worklist_algoritm(
         std::shared_ptr<ControlFlow> cfg, State first_state) {
         const auto instructions = cfg->get_instructions();
         const Vars vars = cfg->get_vars();
@@ -99,11 +92,11 @@ namespace whilelang {
             Node inst = worklist.front();
             worklist.pop_front();
 
-            State out_state = flow(inst, state_table, cfg);
+            State out_state = Impl::flow(inst, state_table, cfg);
             state_table[inst] = out_state;
 
             for (Node succ : cfg->successors(inst)) {
-                bool changed = this->state_join(state_table[succ], out_state);
+                bool changed = Impl::state_join(state_table[succ], out_state);
 
                 if (changed) {
                     worklist.push_back(succ);
@@ -111,8 +104,9 @@ namespace whilelang {
             }
         }
     }
-    template<typename State, typename LatticeValue>
-    void DataFlowAnalysis<State, LatticeValue>::backward_worklist_algoritm(
+
+    template<typename State, typename LatticeValue, typename Impl>
+    void DataFlowAnalysis<State, LatticeValue, Impl>::backward_worklist_algoritm(
         std::shared_ptr<ControlFlow> cfg, State first_state) {
         const auto instructions = cfg->get_instructions();
         const Vars vars = cfg->get_vars();
@@ -125,11 +119,11 @@ namespace whilelang {
             Node inst = worklist.front();
             worklist.pop_front();
 
-            State in_state = flow(inst, state_table, cfg);
+            State in_state = Impl::flow(inst, state_table, cfg);
 
             for (Node pred : cfg->predecessors(inst)) {
                 State &succ_state = state_table[pred];
-                bool changed = state_join(succ_state, in_state);
+                bool changed = Impl::state_join(succ_state, in_state);
 
                 if (changed) {
                     worklist.push_back(pred);
@@ -139,8 +133,8 @@ namespace whilelang {
     }
 
     // Requires the user to define the << operator for the State type
-    template<typename State, typename LatticeValue>
-    void DataFlowAnalysis<State, LatticeValue>::log_state_table(
+    template<typename State, typename LatticeValue, typename Impl>
+    void DataFlowAnalysis<State, LatticeValue, Impl>::log_state_table(
         std::shared_ptr<ControlFlow> cfg) {
         auto instructions = cfg->get_instructions();
         const int number_of_vars = cfg->get_vars().size();

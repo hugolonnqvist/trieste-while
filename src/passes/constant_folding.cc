@@ -7,9 +7,8 @@ namespace whilelang {
     using namespace trieste;
 
     PassDef constant_folding(std::shared_ptr<ControlFlow> cfg) {
-        auto analysis =
-            std::make_shared<DataFlowAnalysis<State, CPLatticeValue>>(
-                cp_create_state, cp_state_join, cp_flow);
+        auto analysis = std::make_shared<
+            DataFlowAnalysis<CPState, CPLatticeValue, CPImpl>>();
 
         auto fetch_instruction = [=](const Node &n) -> Node {
             auto curr = n;
@@ -41,7 +40,7 @@ namespace whilelang {
             }};
 
         constant_folding.pre([=](Node) {
-            State first_state = cp_first_state(cfg);
+            CPState first_state = cp_first_state(cfg);
 
             analysis->forward_worklist_algoritm(cfg, first_state);
 
