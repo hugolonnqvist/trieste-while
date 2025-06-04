@@ -16,6 +16,7 @@ fuzz:
 	./build/while test -f
 
 clean:
+	rm flamegraph.svg gmon.out out.perf folded.perf perf.data
 	rm *.trieste
 
 .PHONY: clean all build/while test

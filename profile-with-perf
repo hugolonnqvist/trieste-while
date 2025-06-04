@@ -1,0 +1,10 @@
+#!/bin/bash
+
+perf record -F 90 -g ./build/while -s ./examples/generated.while
+
+perf script > out.perf
+
+~/Downloads/FlameGraph/stackcollapse-perf.pl ./out.perf > folded.perf
+~/Downloads/FlameGraph/flamegraph.pl folded.perf > flamegraph.svg
+
+

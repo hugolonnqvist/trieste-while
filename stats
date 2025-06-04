@@ -54,7 +54,7 @@ function to_stats() {
 
 runs=25;
 loc=(1000 2500 5000 7500 10000 12500 15000 17500 20000)
-# runs=5
+# runs=10
 # loc=(20000)
 
 graph_header="LOC Inst Inst-Std Vars Vars-Std Parse Parse-Std CFG CFG-Std Constant-Prop Constant-Prop-Std Live-Dead Live-Dead-Std end"

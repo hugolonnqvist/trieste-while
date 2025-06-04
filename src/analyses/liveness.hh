@@ -45,8 +45,7 @@ namespace whilelang {
     }
 
     struct LiveImpl {
-        using StateTable =
-            DataFlowAnalysis<Vars, std::string, LiveImpl>::StateTable;
+		using StateTable = NodeMap<LiveState>;
 
         static LiveState create_state(Vars) {
             return {};

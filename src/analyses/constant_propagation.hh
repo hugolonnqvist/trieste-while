@@ -70,7 +70,7 @@ namespace whilelang {
         }
     };
 
-    using CPState = std::unordered_map<std::string, CPLatticeValue>;
+    using CPState = std::map<std::string, CPLatticeValue>;
 
     CPLatticeValue atom_flow_helper(Node inst, CPState incoming_state) {
         if (inst == Atom) {
@@ -111,8 +111,7 @@ namespace whilelang {
     }
 
     struct CPImpl {
-        using StateTable =
-            DataFlowAnalysis<CPState, CPLatticeValue, CPImpl>::StateTable;
+		using StateTable = NodeMap<CPState>;
 
         static CPState create_state(const Vars &vars) {
             CPState state = CPState();
@@ -126,19 +125,24 @@ namespace whilelang {
         static bool state_join(CPState &x, const CPState &y) {
             bool changed = false;
 
-            for (const auto &[key, val_y] : y) {
-                auto res = x.find(key);
-                if (res != x.end()) {
-                    auto join_res = res->second.join(val_y);
+            auto it1 = x.begin();
+            auto it2 = y.begin();
 
-                    if (res->second != join_res) {
-                        x[key] = join_res;
-                        changed = true;
-                    }
-                } else {
-                    throw std::runtime_error("State do not have the same keys");
+            while (it1 != x.end() && it2 != y.end()) {
+                auto join_res = it1->second.join(it2->second);
+
+                if (join_res != it1->second) {
+                    it1->second = join_res;
+                    changed = true;
                 }
+                it1++;
+                it2++;
             }
+
+            // if (it1 != x.end() || it2 != y.end()) {
+            //     throw std::runtime_error("States are not comparable");
+            // }
+
             return changed;
         }
 

@@ -7,29 +7,41 @@
 namespace whilelang {
     using namespace trieste;
 
-    // struct Implementation {};
+    template<typename Impl, typename State>
+    concept DataflowImplementation = requires(
+        Impl impl,
+        State s1,
+        State s2,
+        const Vars &vars,
+        const Node &node,
+        NodeMap<State> &stateTable,
+        std::shared_ptr<ControlFlow> cfg) {
+        typename Impl::StateTable;
+
+        requires std::same_as<typename Impl::StateTable, NodeMap<State>>;
+
+        // Creates a state which has not yet been reached.
+        // Typically maps all variables to bottom
+        { Impl::create_state(vars) } -> std::same_as<State>;
+
+        // Joins the two state and stores the result in the first one.
+        // Returns a bool stating if the resulting state is changed
+        { Impl::state_join(s1, s2) } -> std::same_as<bool>;
+
+        // Executes the flow function on an instruction
+        // returning the resulting state
+        { Impl::flow(node, stateTable, cfg) } -> std::same_as<State>;
+    };
 
     // The State represents the mapping of code information (typically
     // variables) to the abstract values (LatticeValue)
+    // The Impl struct must follow the DataflowImplementation concept
     template<typename State, typename LatticeValue, typename Impl>
+        requires DataflowImplementation<Impl, State>
     class DataFlowAnalysis {
       public:
         // Tracks a mapping from all program points to their corresponding state
         using StateTable = NodeMap<State>;
-
-        // Creates a state which has not yet been reached.
-        // Typically maps all variables to bottom
-        // using CreateStateFn = std::function<State(const Vars &)>;
-        //
-        // // Joins the two state and stores the result in the first one.
-        // Returns a
-        // // bool stating if the resulting state is changed
-        // using StateJoinFn = std::function<bool(State &, const State &)>;
-        //
-        // // Executes the flow function on an instruction
-        // // returning the resulting state
-        // using FlowFn = std::function<State(
-        //     const Node &, StateTable &, std::shared_ptr<ControlFlow>)>;
 
         DataFlowAnalysis();
 
@@ -53,20 +65,22 @@ namespace whilelang {
             const Nodes &instructions,
             const Vars &vars,
             const Node &program_entry,
-            State first_state);
+            State &first_state);
     };
 
     template<typename State, typename LatticeValue, typename Impl>
+        requires DataflowImplementation<Impl, State>
     DataFlowAnalysis<State, LatticeValue, Impl>::DataFlowAnalysis() {
         this->state_table = StateTable();
     }
 
     template<typename State, typename LatticeValue, typename Impl>
+        requires DataflowImplementation<Impl, State>
     void DataFlowAnalysis<State, LatticeValue, Impl>::init_state_table(
         const Nodes &instructions,
         const Vars &vars,
         const Node &program_start,
-        State first_state) {
+        State &first_state) {
         if (instructions.empty()) {
             throw std::runtime_error("No instructions exist for this program");
         }
@@ -79,6 +93,7 @@ namespace whilelang {
     }
 
     template<typename State, typename LatticeValue, typename Impl>
+        requires DataflowImplementation<Impl, State>
     void DataFlowAnalysis<State, LatticeValue, Impl>::forward_worklist_algoritm(
         std::shared_ptr<ControlFlow> cfg, State first_state) {
         const auto instructions = cfg->get_instructions();
@@ -106,7 +121,9 @@ namespace whilelang {
     }
 
     template<typename State, typename LatticeValue, typename Impl>
-    void DataFlowAnalysis<State, LatticeValue, Impl>::backward_worklist_algoritm(
+        requires DataflowImplementation<Impl, State>
+    void
+    DataFlowAnalysis<State, LatticeValue, Impl>::backward_worklist_algoritm(
         std::shared_ptr<ControlFlow> cfg, State first_state) {
         const auto instructions = cfg->get_instructions();
         const Vars vars = cfg->get_vars();
@@ -134,6 +151,7 @@ namespace whilelang {
 
     // Requires the user to define the << operator for the State type
     template<typename State, typename LatticeValue, typename Impl>
+        requires DataflowImplementation<Impl, State>
     void DataFlowAnalysis<State, LatticeValue, Impl>::log_state_table(
         std::shared_ptr<ControlFlow> cfg) {
         auto instructions = cfg->get_instructions();

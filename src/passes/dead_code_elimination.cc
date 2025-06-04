@@ -151,7 +151,7 @@ namespace whilelang {
 
             analysis->backward_worklist_algoritm(cfg, first_state);
 
-            cfg->log_instructions();
+            // cfg->log_instructions();
             // analysis->log_state_table(cfg);
 
             return 0;

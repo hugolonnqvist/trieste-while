@@ -13,7 +13,7 @@ namespace whilelang {
             return type == other.type;
         }
 
-        ZeroLatticeValue lattice_join(const ZeroLatticeValue &other) const {
+        ZeroLatticeValue join(const ZeroLatticeValue &other) const {
             auto top = ZeroLatticeValue::top();
             auto zero = ZeroLatticeValue::zero();
             auto non_zero = ZeroLatticeValue::non_zero();
@@ -80,8 +80,7 @@ namespace whilelang {
     };
 
     struct ZeroImpl {
-        using StateTable =
-            DataFlowAnalysis<ZeroState, ZeroLatticeValue, ZeroImpl>::StateTable;
+		using StateTable = NodeMap<ZeroState>;
 
         static ZeroState create_state(const Vars &vars) {
             ZeroState state = ZeroState();
@@ -95,20 +94,24 @@ namespace whilelang {
         static bool state_join(ZeroState &x, const ZeroState &y) {
             bool changed = false;
 
-            for (const auto &[key, val_y] : y) {
-                auto res = x.find(key);
+            auto it1 = x.begin();
+            auto it2 = y.begin();
 
-                if (res != x.end()) {
-                    auto join_res = res->second.lattice_join(val_y);
+            while (it1 != x.end() && it2 != y.end()) {
+                auto join_res = it1->second.join(it2->second);
 
-                    if (res->second != join_res) {
-                        x[key] = join_res;
-                        changed = true;
-                    }
-                } else {
-                    throw std::runtime_error("State do not have the same keys");
+                if (join_res != it1->second) {
+                    it1->second = join_res;
+                    changed = true;
                 }
+                it1++;
+                it2++;
             }
+
+            if (it1 != x.end() || it2 != y.end()) {
+                throw std::runtime_error("States are not comparable");
+            }
+
             return changed;
         }
 
@@ -130,7 +133,7 @@ namespace whilelang {
 
                     for (auto node : prevs) {
                         if (node == Return) {
-                            val = val.lattice_join(handle_atom(
+                            val = val.join(handle_atom(
                                 (node / Atom) / Expr, incoming_state));
                         }
                     }
