@@ -30,7 +30,8 @@ namespace whilelang {
                     return Program << res;
                 },
                 T(Normalize) << T(FunDef)[FunDef] >> [](Match &_) -> Node {
-                    return FunDef << (_(FunDef) / FunId)
+                    return (FunDef ^ _(FunDef))
+                                  << (_(FunDef) / FunId)
                                   << (_(FunDef) / ParamList)
                                   << (Normalize << (_(FunDef) / Body));
                 },
@@ -51,8 +52,8 @@ namespace whilelang {
                     return res;
                 },
 
-                T(Stmt) << (T(Normalize) << T(Var)) >>
-                    [](Match &) -> Node { return Stmt << Skip; },
+                T(Normalize) << T(Var)[Var] >>
+                    [](Match &_) -> Node { return _(Var); },
 
                 T(Normalize)
                         << (T(Assign)
@@ -152,9 +153,21 @@ namespace whilelang {
                 T(Normalize) << T(While)[While] >> [](Match &_) -> Node {
                     auto bexpr = _(While) / BExpr;
                     auto do_stmt = _(While) / Do;
-                    return While << (Normalize << bexpr)
+                    return While << (Block << (Normalize << bexpr))
                                  << (Normalize << do_stmt);
                 },
+
+                T(While) << (T(Block)[Block] * T(Stmt)[Do]) >>
+                    [](Match &_) -> Node {
+                        auto block = _(Block);
+                        auto body = _(Do);
+                        auto batom = block->pop_back();
+                        if (block->empty())
+                            block << (Stmt << Skip);
+                        return While << (Stmt << block)
+                                     << batom
+                                     << body;
+                    },
 
                 T(Normalize) << (T(Output) << T(AExpr)[AExpr]) >> [](Match &_)
                     -> Node { return Output << (Normalize << _(AExpr)); },
@@ -181,28 +194,57 @@ namespace whilelang {
                     auto op_type = _(Op)->type();
                     Node lhs = _(Op) / Lhs;
                     Node rhs = _(Op) / Rhs;
-                    return BExpr
-                        << (op_type << (Normalize << lhs)
-                                    << (Normalize << rhs));
+
+                    auto id = Ident ^ _(Op)->fresh();
+
+                    auto assign = Assign
+                        << id
+                        << (BExpr << (op_type << (Normalize << lhs)
+                                              << (Normalize << rhs)));
+
+                    return Seq << (Lift << Block << (Stmt << assign))
+                               << (BAtom << (Ident ^ id->clone()));
                 },
 
                 T(Normalize) << (T(BExpr)[BExpr] << T(And, Or)[Op]) >>
                     [](Match &_) -> Node {
-                    Node res = _(Op)->type();
-                    for (auto child : *_(Op)) {
-                        res << (Normalize << child);
+                    Node op = _(Op);
+                    auto id = Ident ^ _(Op)->fresh();
+                    auto curr = op->front();
+
+                    // Make sure binary ops have exactly two operands
+                    for (auto it = op->begin() + 1; it != op->end(); it++) {
+                        curr = BExpr << (op->type() << curr << *it);
                     }
-                    return BExpr << res;
+
+                    auto lhs = (curr / Expr)->front();
+                    auto rhs = (curr / Expr)->back();
+
+                    auto assign = Assign
+                        << id
+                        << (BExpr
+                            << (_(Op)->type()
+                                << (Normalize << lhs) << (Normalize << rhs)));
+
+                    return Seq << (Lift << Block << (Stmt << assign))
+                               << (BAtom << id->clone());
                 },
 
                 T(Normalize) << (T(BExpr)[BExpr] << T(Not)[Op]) >>
                     [](Match &_) -> Node {
                     auto expr = _(Op) / Expr;
-                    return BExpr << (_(Op)->type() << (Normalize << expr));
+                    auto id = Ident ^ _(Op)->fresh();
+
+                    auto assign = Assign
+                        << id
+                        << (BExpr << (_(Op)->type() << (Normalize << expr)));
+
+                    return Seq << (Lift << Block << (Stmt << assign))
+                               << (BAtom << id->clone());
                 },
 
-                T(Normalize) << T(BExpr)[BExpr] >>
-                    [](Match &_) -> Node { return _(BExpr); },
+                T(Normalize) << (T(BExpr) << T(Ident, True, False)[Expr]) >>
+                    [](Match &_) -> Node { return BAtom << _(Expr); },
 
             }};
 

@@ -58,13 +58,6 @@ namespace whilelang {
                 m.push(following);
             };
 
-        auto add_fun = [](Make &m) {
-            if (m.in(Group)) {
-                m.pop(Group);
-            }
-            m.add(FunDef);
-        };
-
         p("start",
           {
               // whitespace
@@ -96,7 +89,7 @@ namespace whilelang {
               "//[^\n]*" >> [](auto &) {}, // no-op
 
               // Functions
-              "fun\\b" >> [add_fun](auto &m) { add_fun(m); },
+              "fun\\b" >> [](auto &m) { m.term(); m.add(FunDef); },
               "var\\b" >> [](auto &m) { m.push(Var); },
               "return\\b" >> [](auto &m) { m.push(Return); },
 

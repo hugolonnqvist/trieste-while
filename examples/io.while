@@ -3,6 +3,7 @@ fun main() {
 	x := input;
 	y := x + input;
 	output x + y;
+	return 0;
 }
 
 

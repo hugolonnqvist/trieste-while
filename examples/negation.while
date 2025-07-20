@@ -1,0 +1,8 @@
+fun main() {
+    if (not (1 < 2)) then {
+        output 1;
+    } else {
+        output 2;
+    };
+    return 0;
+}

@@ -1,10 +1,12 @@
 fun main() {
 	var x;
-	while true do {
+	x := 0;
+	while x = 0 do {
 	  if true then
 		x := 1
 	  else
 		x := 2
 	};
 	output x;
+	return 0;
 }

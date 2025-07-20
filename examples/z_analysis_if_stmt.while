@@ -14,4 +14,5 @@ fun main() {
 	output a;
 	output th;
 	output el;
+	return 0;
 }

@@ -14,9 +14,6 @@ namespace whilelang {
     PassDef unique_variables(
         std::shared_ptr<std::map<std::string, std::string>> vars_map);
 
-    // Evaluation
-    PassDef eval();
-
     // For performance testing
     PassDef gather_stats();
 
@@ -35,6 +32,12 @@ namespace whilelang {
     PassDef dead_code_elimination(std::shared_ptr<ControlFlow> cfg);
     PassDef dead_code_cleanup();
 
+	// Compilation
+	PassDef to3addr();
+	PassDef gather_vars();
+	PassDef blockify();
+	PassDef compile();
+
     // clang-format off
 	inline const auto parse_token =
 		Skip |
@@ -48,11 +51,11 @@ namespace whilelang {
 		;
 
 	inline const auto grouping_construct =
-		Group | Semi | Paren | Brace | Comma | 
+		Group | Semi | Paren | Brace | Comma |
 		Add | Sub | Mul |
 		LT | Equals |
 		And | Or |
-		Assign 
+		Assign
 		;
 
 	inline const wf::Wellformed parse_wf =
@@ -82,16 +85,14 @@ namespace whilelang {
 		| (Group	<<= parse_token++)
 		;
 
-	inline const wf::Wellformed functions_wf = 
+	inline const wf::Wellformed functions_wf =
 		(parse_wf - File)
 		| (Top <<= Program)
 		| (Program <<= FunDef++[1])
 		| (FunDef <<= FunId * ParamList * Body)
 		| (ParamList <<= Param++)
 		| (Param <<= Ident)[Ident]
-		| (FunId <<= Ident)
 		| (Body <<= ~grouping_construct)
-		| (Var <<= Ident)[Ident]
 		;
 
 	inline const auto expressions_parse_token = parse_token - Not - True - False - Int - Ident - Input;
@@ -114,6 +115,7 @@ namespace whilelang {
 		| (Or     <<= BExpr++[2])
 		| (Not    <<= (Expr >>= BExpr))
 		| (Semi   <<= (expressions_grouping_construct - Semi)++[1])
+		| (Var    <<= ~expressions_grouping_construct)
 		| (If     <<= ~expressions_grouping_construct)
 		| (Then   <<= ~expressions_grouping_construct)
 		| (Else   <<= ~expressions_grouping_construct)
@@ -130,30 +132,62 @@ namespace whilelang {
     inline const wf::Wellformed statements_wf =
 		(expressions_wf - Group - Paren - Do - Then - Else - Body)
 		| (FunDef <<= FunId * ParamList * (Body >>= Stmt))
-		| (Stmt <<= (Stmt >>= (Skip | Assign | While | If | Output | Block | Return | Var)))
+		| (Stmt <<= (Stmt >>= (Skip | Var | Assign | While | If | Output | Block | Return)))
+		| (Var <<= Ident)[Ident]
 		| (If <<= BExpr * (Then >>= Stmt) * (Else >>= Stmt))
 		| (While <<= BExpr * (Do >>= Stmt))
 		| (Assign <<= Ident * (Rhs >>= AExpr))
-		| (Output <<= AExpr)	
+		| (Output <<= AExpr)
 		| (Block <<= Stmt++[1])
 		| (Return <<= AExpr)
 		;
 
-	inline const wf::Wellformed eval_wf =
-		(statements_wf - Top);
-
 	inline const wf::Wellformed normalization_wf =
-		(statements_wf - Var)
-		| (Stmt <<= (Stmt >>= (Skip | Assign | While | If | Output | Block | Return)))
+		statements_wf
+		| (Stmt <<= (Stmt >>= (Skip | Var | Assign | While | If | Output | Block | Return)))
+		| (If <<= BAtom * (Then >>= Stmt) * (Else >>= Stmt))
+		| (While <<= Stmt * BAtom * (Do >>= Stmt))
+		| (Assign <<= Ident * (Rhs >>= (AExpr | BExpr)))
 		| (AExpr <<= (Expr >>= (Atom | Add | Sub | Mul | FunCall)))
 		| (Atom <<= (Expr >>= (Int | Ident | Input)))
 		| (Add <<= (Lhs >>= Atom) * (Rhs >>= Atom))
 		| (Sub <<= (Lhs >>= Atom) * (Rhs >>= Atom))
 		| (Mul <<= (Lhs >>= Atom) * (Rhs >>= Atom))
+		| (BExpr <<= (Expr >>= (BAtom | Not | And | Or | LT | Equals)))
+		| (BAtom <<= (Expr >>= (Ident | True | False)))
+		| (And <<= (Lhs >>= BAtom) * (Rhs >>= BAtom))
+		| (Or <<= (Lhs >>= BAtom) * (Rhs >>= BAtom))
 		| (LT <<= (Lhs >>= Atom) * (Rhs >>= Atom))
 		| (Equals <<= (Lhs >>= Atom) * (Rhs >>= Atom))
+		| (Not <<= (BAtom >>= BAtom))
 		| (Output <<= Atom)
 		| (Return <<= Atom)
 		| (Arg <<= Atom)
 		;
+
+	inline const wf::Wellformed three_addr_wf =
+	    (normalization_wf - If - While)
+		| (Stmt <<= (Stmt >>= (Skip | Var | Assign | Cond | Jump | Label | Output | Block | Return)))
+		| (Assign <<= Ident * (Rhs >>= (AExpr | BExpr)))
+		| (Return <<= Ident)
+		| (Cond <<= Ident * (Then >>= Label) * (Else >>= Label))
+		| (Jump <<= Label)
+		;
+
+	inline const wf::Wellformed gather_vars_wf =
+	    (three_addr_wf - Var)
+		| (FunDef <<= FunId * ParamList * Idents * (Body >>= Stmt))
+		| (Idents <<= Ident++)
+		| (Stmt <<= (Stmt >>= (Skip | Assign | Cond | Jump | Label | Output | Block | Return)))
+		;
+
+	inline const wf::Wellformed blockify_wf =
+	    gather_vars_wf
+		| (FunDef <<= FunId * ParamList * Idents * Blocks)
+		| (Blocks <<= Block++[1])
+		| (Block <<= Label * Body * (Jump >>= Jump | Cond | Return))
+		| (Body <<= Stmt++)
+		| (Stmt <<= (Stmt >>= (Skip | Assign | Output)))
+		;
+	// clang-format on
 }

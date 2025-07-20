@@ -18,4 +18,5 @@ fun main() {
 	output first;
 	output second;
 	output post;
+	return 0;
 }

@@ -27,7 +27,7 @@ namespace whilelang {
                     return NoChange;
                 },
 
-                T(Assign, Skip, Output, Return)[Inst] >> [=](Match &_) -> Node {
+                T(Var, Assign, Skip, Output, Return)[Inst] >> [=](Match &_) -> Node {
                     Node inst = _(Inst);
                     instructions->insert(inst);
 
@@ -41,14 +41,14 @@ namespace whilelang {
                     return NoChange;
                 },
 
-                (T(Atom) / T(Param))[Expr] << T(Ident)[Ident] >>
+                (T(Atom, BAtom, Param))[Expr] << T(Ident)[Ident] >>
                     [=](Match &_) -> Node {
                     auto str = get_identifier(_(Ident));
                     vars->insert(str);
                     return NoChange;
                 },
 
-                In(While, If) * T(BExpr)[Inst] >> [=](Match &_) -> Node {
+                In(While, If) * T(BAtom)[Inst] >> [=](Match &_) -> Node {
                     instructions->insert(_(Inst));
                     return NoChange;
                 },

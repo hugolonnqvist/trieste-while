@@ -5,4 +5,5 @@ fun main() {
 	y := input;
 	output x;
 	output y;
+	return 0;
 }

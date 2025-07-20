@@ -12,7 +12,7 @@ namespace whilelang {
         return {};
     }
 
-    Vars get_aexpr_op_defs(const Node &op) {
+    Vars get_expr_op_defs(const Node &op) {
         auto lhs = get_atom_defs(op / Lhs);
         auto rhs = get_atom_defs(op / Rhs);
         lhs.insert(rhs.begin(), rhs.end());
@@ -20,11 +20,13 @@ namespace whilelang {
         return lhs;
     }
 
-    Vars get_aexpr_defs(const Node &inst) {
-        if (inst == Atom) {
+    Vars get_expr_defs(const Node &inst) {
+        if (inst == Atom || inst == BAtom) {
             return get_atom_defs(inst);
-        } else if (inst->type().in({Add, Sub, Mul})) {
-            return get_aexpr_op_defs(inst);
+        } else if (inst->type().in({Add, Sub, Mul, And, Or, LT, Equals})) {
+            return get_expr_op_defs(inst);
+        } else if (inst == Not) {
+            return get_atom_defs(inst / BAtom);
         } else if (inst == FunCall) {
             auto args = inst / ArgList;
             auto defs = Vars();
@@ -39,8 +41,8 @@ namespace whilelang {
             return defs;
         } else {
             throw std::runtime_error(
-                "Unexpected token, expected that parent would be of type "
-                "aexpr");
+                "Unexpected token, expected that parent would be an expression"
+            );
         }
     }
 
@@ -69,7 +71,7 @@ namespace whilelang {
                 auto rhs = inst / Rhs;
                 auto var = get_identifier(inst / Ident);
 
-                gen_defs = get_aexpr_defs(rhs / Expr);
+                gen_defs = get_expr_defs(rhs / Expr);
 
                 new_defs.erase(var);
             } else if (inst->type().in({Output, Return})) {
@@ -77,8 +79,10 @@ namespace whilelang {
             } else if (inst == BExpr) {
                 auto expr = inst / Expr;
                 if (expr->type().in({LT, Equals})) {
-                    gen_defs = get_aexpr_op_defs(expr);
+                    gen_defs = get_expr_op_defs(expr);
                 }
+            } else if (inst == BAtom) {
+                gen_defs = get_atom_defs(inst);
             } else if (inst == Skip) {
                 return new_defs;
             }

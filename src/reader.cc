@@ -5,7 +5,7 @@ namespace whilelang {
 
     Reader reader(
         std::shared_ptr<std::map<std::string, std::string>> vars_map,
-        bool run_stats,
+        bool,
         bool run_mermaid) {
         auto mermaid_cond = [=](Node) { return run_mermaid; };
         return {
@@ -28,10 +28,10 @@ namespace whilelang {
 
                 // Normalization
                 normalization(),
-                // generate_mermaid().cond(mermaid_cond),
+                generate_mermaid(normalization_wf).cond(mermaid_cond),
 
                 // Used for perfomance analysis
-                gather_stats().cond([=](Node) { return run_stats; }),
+                //gather_stats().cond([=](Node) { return run_stats; }),
             },
             whilelang::parser(),
         };

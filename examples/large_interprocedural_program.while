@@ -70,5 +70,6 @@ fun main() {
     output max(max(1, 5), 10);
 	output sum_to_n(input);
 	output max(sum_to_n(2), sum_to_n(4));
+	return 0;
 }
 

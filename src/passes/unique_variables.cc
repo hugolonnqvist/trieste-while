@@ -12,8 +12,7 @@ namespace whilelang {
             statements_wf,
             dir::bottomup | dir::once,
             {
-                // Don't change function id's since they are already unique
-                --In(FunId) * T(Ident)[Ident] >> [=](Match &_) -> Node {
+                T(Ident)[Ident] >> [=](Match &_) -> Node {
                     auto var = get_var(_(Ident));
                     auto new_var = vars_map->find(var);
 

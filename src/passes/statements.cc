@@ -12,6 +12,9 @@ namespace whilelang {
                 T(Skip)[Skip] >>
                     [](Match &_) -> Node { return Stmt << _(Skip); },
 
+                T(Var) << (T(AExpr) << T(Ident)[Ident]) >>
+                    [](Match &_) -> Node { return Stmt << (Var << _(Ident)); },
+
                 T(Assign) << ((T(AExpr) << T(Ident)[Ident]) * T(AExpr)[Rhs]) >>
                     [](Match &_) -> Node {
                     return Stmt << (Assign << _(Ident) << _(Rhs));
@@ -64,10 +67,15 @@ namespace whilelang {
                 T(Brace) << (T(Stmt)[Stmt] * End) >>
                     [](Match &_) -> Node { return _(Stmt); },
 
-                T(Var)[Var] << T(Ident) >>
-                    [](Match &_) -> Node { return Stmt << _(Var); },
-
                 // Error rules
+                T(Var)[Var] << Any >>
+                    [](Match &_) -> Node {
+                    return Error << (ErrorAst << _(Var))
+                                 << (ErrorMsg ^
+                                     "Invalid variable declaration, expected "
+                                     "an identifier");
+                },
+
                 T(Group) << (T(Stmt, Brace) * T(Stmt, Brace)[Stmt]) >>
                     [](Match &_) -> Node {
                     return Error << (ErrorAst << _(Stmt))

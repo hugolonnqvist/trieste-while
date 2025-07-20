@@ -14,9 +14,11 @@ namespace whilelang {
             auto curr = n;
 
             while (!curr->type().in(
-                {Assign, BExpr, FunCall, FunDef, Output, Return})) {
+                {If, While, Assign, FunCall, FunDef, Output, Return})) {
                 curr = curr->parent();
             }
+            if (curr->type().in({If, While}))
+                return curr / BAtom;
             return curr;
         };
 
@@ -33,6 +35,19 @@ namespace whilelang {
                     if (lattice_value.type == CPAbstractType::Constant) {
                         cfg->set_dirty_flag(true);
                         return create_const_node(*lattice_value.value);
+                    } else {
+                        return NoChange;
+                    }
+                },
+
+                In(BAtom) * T(Ident)[Ident] >> [=](Match &_) -> Node {
+                    auto inst = fetch_instruction(_(Ident));
+                    auto var = get_identifier(_(Ident));
+                    auto lattice_value = analysis->get_state(inst)[var];
+
+                    if (lattice_value.type == CPAbstractType::Constant) {
+                        cfg->set_dirty_flag(true);
+                        return *lattice_value.value? True : False;
                     } else {
                         return NoChange;
                     }

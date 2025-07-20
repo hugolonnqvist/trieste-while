@@ -4,7 +4,7 @@ namespace whilelang {
     using namespace trieste;
 
     PassDef expressions() {
-        auto UNHANDLED = --In(BExpr, AExpr, Param, FunId, Var);
+        auto UNHANDLED = --In(BExpr, AExpr, Param);
         return {
             "expressions",
             expressions_wf,
@@ -13,7 +13,7 @@ namespace whilelang {
 
                 T(Ident)[Ident] * T(Paren)[Paren] >> [](Match &_) -> Node {
                     return AExpr
-                        << (FunCall << (FunId << _(Ident))
+                        << (FunCall << (FunId ^ _(Ident))
                                     << (ArgList << *_(Paren)));
                 },
 
@@ -32,28 +32,28 @@ namespace whilelang {
                 In(ArgList) * T(AExpr)[AExpr] >>
                     [](Match &_) -> Node { return Arg << _(AExpr); },
 
-                UNHANDLED *T(True, False)[Expr] >>
+                UNHANDLED * T(True, False)[Expr] >>
                     [](Match &_) -> Node { return BExpr << _(Expr); },
 
-                UNHANDLED *T(Ident, Int, Input)[Expr] >>
+                UNHANDLED * T(Ident, Int, Input, FunCall)[Expr] >>
                     [](Match &_) -> Node { return AExpr << _(Expr); },
 
-                UNHANDLED *(T(Not) << End) * T(BExpr)[BExpr] >>
+                UNHANDLED * (T(Not) << End) * T(BExpr)[BExpr] >>
                     [](Match &_) -> Node { return BExpr << (Not << _(BExpr)); },
 
-                UNHANDLED *T(Add, Sub, Mul)[Op] << (T(AExpr) * T(AExpr)++) >>
+                UNHANDLED * T(Add, Sub, Mul)[Op] << (T(AExpr) * T(AExpr)++) >>
                     [](Match &_) -> Node { return AExpr << _(Op); },
 
-                UNHANDLED *T(Equals, LT)[Op] << (T(AExpr) * T(AExpr) * End) >>
+                UNHANDLED * T(Equals, LT)[Op] << (T(AExpr) * T(AExpr) * End) >>
                     [](Match &_) -> Node { return BExpr << _(Op); },
 
-                UNHANDLED *T(And, Or)[Op] << (T(BExpr) * T(BExpr)) >>
+                UNHANDLED * T(And, Or)[Op] << (T(BExpr) * T(BExpr)) >>
                     [](Match &_) -> Node { return BExpr << _(Op); },
 
-                UNHANDLED *T(Paren) << (T(AExpr, BExpr)[Expr] * End) >>
+                UNHANDLED * T(Paren) << (T(AExpr, BExpr)[Expr] * End) >>
                     [](Match &_) -> Node { return _(Expr); },
 
-                UNHANDLED *T(Group) << (T(AExpr, BExpr)[Expr] * End) >>
+                UNHANDLED * T(Group) << (T(AExpr, BExpr)[Expr] * End) >>
                     [](Match &_) -> Node { return _(Expr); },
 
                 // Error rules

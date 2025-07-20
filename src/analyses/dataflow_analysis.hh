@@ -46,7 +46,7 @@ namespace whilelang {
         DataFlowAnalysis();
 
         State get_state(const Node &instruction) {
-            return state_table[instruction];
+            return state_table.at(instruction);
         };
 
         void forward_worklist_algoritm(
@@ -111,7 +111,7 @@ namespace whilelang {
             state_table[inst] = out_state;
 
             for (Node succ : cfg->successors(inst)) {
-                bool changed = Impl::state_join(state_table[succ], out_state);
+                bool changed = Impl::state_join(state_table.at(succ), out_state);
 
                 if (changed) {
                     worklist.push_back(succ);

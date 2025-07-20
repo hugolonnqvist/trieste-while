@@ -58,7 +58,7 @@ namespace whilelang {
                     return NoChange;
                 },
 
-                T(Assign, Skip, Output, Return)[Inst] >> [=](Match &_) -> Node {
+                T(Var, Assign, Skip, Output, Return)[Inst] >> [=](Match &_) -> Node {
                     Node inst = _(Inst);
                     cfg->add_instruction(inst);
 
@@ -71,13 +71,13 @@ namespace whilelang {
                     return NoChange;
                 },
 
-                (T(Atom) / T(Param))[Expr] << T(Ident)[Ident] >>
+                In(Atom, BAtom, Param) * T(Ident)[Ident] >>
                     [=](Match &_) -> Node {
                     cfg->add_var(_(Ident));
                     return NoChange;
                 },
 
-                In(While, If) * T(BExpr)[Inst] >> [=](Match &_) -> Node {
+                In(While, If) * T(BAtom)[Inst] >> [=](Match &_) -> Node {
                     cfg->add_instruction(_(Inst));
                     return NoChange;
                 },
@@ -101,23 +101,25 @@ namespace whilelang {
             {
                 // Control flow inside of While
                 T(While)[While] >> [=](Match &_) -> Node {
-                    auto b_expr = _(While) / BExpr;
+                    auto stmt = _(While) / Stmt;
+                    auto cond = _(While) / BAtom;
                     auto body = _(While) / Do;
 
-                    cfg->add_edge(get_last_basic_children(body), b_expr);
-                    cfg->add_edge(b_expr, get_first_basic_child(body));
+                    cfg->add_edge(get_last_basic_children(stmt), cond);
+                    cfg->add_edge(cond, get_first_basic_child(body));
+                    cfg->add_edge(get_last_basic_children(body), get_first_basic_child(stmt));
 
                     return NoChange;
                 },
 
                 // Control flow inside of If
                 T(If)[If] >> [=](Match &_) -> Node {
-                    auto b_expr = _(If) / BExpr;
+                    auto cond = _(If) / BAtom;
                     auto then_stmt = _(If) / Then;
                     auto else_stmt = _(If) / Else;
 
-                    cfg->add_edge(b_expr, get_first_basic_child(then_stmt));
-                    cfg->add_edge(b_expr, get_first_basic_child(else_stmt));
+                    cfg->add_edge(cond, get_first_basic_child(then_stmt));
+                    cfg->add_edge(cond, get_first_basic_child(else_stmt));
 
                     return NoChange;
                 },
@@ -146,7 +148,7 @@ namespace whilelang {
                 T(FunDef)[FunDef] >> [=](Match &_) -> Node {
                     auto fun_def = _(FunDef);
                     auto first_body = get_first_basic_child(fun_def / Body);
-					
+
 					cfg->add_edge(fun_def, first_body);
 
                     return NoChange;
@@ -155,7 +157,7 @@ namespace whilelang {
                 T(FunCall)[FunCall] >> [=](Match &_) -> Node {
                     auto fun_call = _(FunCall);
                     auto fun_def = cfg->get_fun_def(fun_call);
-					
+
 					cfg->add_edge(fun_call, fun_def);
 
                     return NoChange;
@@ -164,8 +166,8 @@ namespace whilelang {
                 // General case of a sequence of statements
                 In(Block) * T(Stmt)[Prev] * T(Stmt)[Post] >>
                     [=](Match &_) -> Node {
-                    auto first_post = get_first_basic_child(_(Post));
                     auto last_prevs = get_last_basic_children(_(Prev));
+                    auto first_post = get_first_basic_child(_(Post));
 
 					cfg->add_edge(last_prevs, first_post);
 

@@ -6,33 +6,17 @@
 namespace whilelang {
     using namespace trieste;
 
-    std::optional<bool> get_bexpr_value(Node bexpr) {
+    std::optional<bool> get_batom_value(Node bexpr) {
         auto expr = bexpr / Expr;
 
         if (expr->type().in({True, False})) {
             return expr == True ? true : false;
-        } else if (expr == And) {
-            bool res = true;
-
-            for (auto &child : *expr) {
-                res = res && get_bexpr_value(child);
-            }
-            return res;
-        } else if (expr == Or) {
-            bool res = false;
-
-            for (auto &child : *expr) {
-                res = res || get_bexpr_value(child);
-            }
-            return res;
-        } else if (expr == Not) {
-            return !get_bexpr_value(expr / Expr);
-        } else {
-            return std::nullopt;
         }
+
+        return std::nullopt;
     };
 
-    auto bool_to_bexpr = [](bool v) -> Node { return v ? True : False; };
+    Node bool_to_bexpr(bool v) { return BAtom << (v ? True : False); };
 
     PassDef dead_code_elimination(std::shared_ptr<ControlFlow> cfg) {
         auto analysis = std::make_shared<
@@ -46,7 +30,7 @@ namespace whilelang {
                 {
                     // Remove unused functions
                     T(FunDef)[FunDef] >> [=](Match &_) -> Node {
-                        auto fun_id = (_(FunDef) / FunId) / Ident;
+                        auto fun_id = _(FunDef) / FunId;
 
                         if (get_identifier(fun_id) != "main" &&
                             cfg->get_fun_calls_from_def(_(FunDef)).empty()) {
@@ -58,7 +42,7 @@ namespace whilelang {
                     // Remove unused variables
                     T(Stmt)
                             << (T(Assign)[Assign]
-                                << (T(Ident)[Ident] * T(AExpr)[AExpr])) >>
+                                << (T(Ident)[Ident] * T(AExpr, BExpr))) >>
                         [=](Match &_) -> Node {
                         auto id = get_identifier(_(Ident));
                         auto assign = _(Assign);
@@ -110,11 +94,11 @@ namespace whilelang {
                     // Try to determine branching of if statements
                     T(Stmt)
                             << (T(If)
-                                << (T(BExpr)[BExpr] * T(Stmt)[Then] *
+                                << (T(BAtom)[BAtom] * T(Stmt)[Then] *
                                     T(Stmt)[Else])) >>
                         [=](Match &_) -> Node {
-                        auto bexpr = _(BExpr);
-                        auto bexpr_value = get_bexpr_value(bexpr);
+                        auto batom = _(BAtom);
+                        auto bexpr_value = get_batom_value(batom);
 
                         if (bexpr_value.has_value()) {
                             if (*bexpr_value) {
@@ -128,10 +112,10 @@ namespace whilelang {
                     },
 
                     // Try to determine branching of while statements
-                    T(Stmt) << (T(While) << T(BExpr)[BExpr]) >>
+                    T(Stmt) << (T(While) << (T(Stmt) * T(BAtom)[BAtom])) >>
                         [=](Match &_) -> Node {
-                        auto bexpr = _(BExpr);
-                        auto bexpr_value = get_bexpr_value(bexpr);
+                        auto batom = _(BAtom);
+                        auto bexpr_value = get_batom_value(batom);
 
                         if (bexpr_value.has_value()) {
                             if (*bexpr_value) {

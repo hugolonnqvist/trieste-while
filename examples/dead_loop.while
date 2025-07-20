@@ -1,0 +1,11 @@
+fun main() {
+    var x;
+    var y;
+    x := 0;
+    y := 5;
+    while (y < x) do {
+        skip;
+    };
+    output y;
+    return 0;
+}

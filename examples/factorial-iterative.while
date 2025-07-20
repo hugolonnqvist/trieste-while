@@ -11,4 +11,5 @@ fun main() {
 	};
 
 	output x;
+	return 0;
 }

@@ -72,8 +72,8 @@ namespace whilelang {
 
     using CPState = std::map<std::string, CPLatticeValue>;
 
-    CPLatticeValue atom_flow_helper(Node inst, CPState incoming_state) {
-        if (inst == Atom) {
+    CPLatticeValue get_lattice_value_from_atom(Node inst, CPState incoming_state) {
+        if (inst == Atom || inst == BAtom) {
             Node expr = inst / Expr;
 
             if (expr == Int) {
@@ -81,22 +81,32 @@ namespace whilelang {
             } else if (expr == Ident) {
                 std::string rhs_ident = get_identifier(expr);
                 return incoming_state[rhs_ident];
+            } else if (expr == True || expr == False) {
+                return CPLatticeValue::constant(expr == True ? 1 : 0);
             }
         }
 
         return CPLatticeValue::top();
     }
 
-    int apply_arith_op(Node op, int x, int y) {
+    int apply_op(Node op, int x, int y) {
         if (op == Add) {
             return x + y;
         } else if (op == Sub) {
             return x - y;
         } else if (op == Mul) {
             return x * y;
+        } else if (op == And) {
+            return x && y? 1: 0;
+        } else if (op == Or) {
+            return x || y? 1: 0;
+        } else if (op == LT) {
+            return x < y ? 1 : 0;
+        } else if (op == Equals) {
+            return x == y ? 1 : 0;
         } else {
             throw std::runtime_error(
-                "Error, expected an arithmetic operation, but was" +
+                "Error, expected an operation, but was" +
                 std::string(op->type().str()));
         }
     };
@@ -156,19 +166,31 @@ namespace whilelang {
                 std::string var = get_identifier(inst / Ident);
 
                 auto expr = (inst / Rhs) / Expr;
-                if (expr == Atom) {
+                if (expr == Atom || expr == BAtom) {
                     incoming_state[var] =
-                        atom_flow_helper(expr, incoming_state);
-                } else if (expr->type().in({Add, Sub, Mul})) {
+                        get_lattice_value_from_atom(expr, incoming_state);
+                } else if (expr == Not) {
+                    Node atom = expr / BAtom;
+                    auto atom_value =
+                        get_lattice_value_from_atom(atom, incoming_state);
+
+                    if (atom_value.type == CPAbstractType::Constant) {
+                        auto op_result = *atom_value.value == 1? 0: 1;
+                        incoming_state[var] =
+                            CPLatticeValue::constant(op_result);
+                    } else {
+                        incoming_state[var] = CPLatticeValue::top();
+                    }
+                } else if (expr->type().in({Add, Sub, Mul, And, Or, LT, Equals})) {
                     Node lhs = expr / Lhs;
                     Node rhs = expr / Rhs;
 
-                    auto lhs_value = atom_flow_helper(lhs, incoming_state);
-                    auto rhs_value = atom_flow_helper(rhs, incoming_state);
+                    auto lhs_value = get_lattice_value_from_atom(lhs, incoming_state);
+                    auto rhs_value = get_lattice_value_from_atom(rhs, incoming_state);
 
                     if (lhs_value.type == CPAbstractType::Constant &&
                         rhs_value.type == CPAbstractType::Constant) {
-                        auto op_result = apply_arith_op(
+                        auto op_result = apply_op(
                             expr, *lhs_value.value, *rhs_value.value);
                         incoming_state[var] =
                             CPLatticeValue::constant(op_result);
@@ -183,7 +205,7 @@ namespace whilelang {
                     // Join result of all return statements
                     for (auto prev : prevs) {
                         if (prev == Return) {
-                            val = val.join(atom_flow_helper(
+                            val = val.join(get_lattice_value_from_atom(
                                 prev / Atom, state_table[prev]));
                         }
                     }
@@ -202,11 +224,11 @@ namespace whilelang {
                     auto arg = args->at(i) / Atom;
 
                     incoming_state[var_dec] =
-                        atom_flow_helper(arg, incoming_state);
+                        get_lattice_value_from_atom(arg, incoming_state);
                 }
             } else if (
                 inst == FunDef &&
-                get_identifier((inst / FunId) / Ident) != "main") {
+                get_identifier(inst / FunId) != "main") {
                 auto params = inst / ParamList;
 
                 auto param_vars = Vars();

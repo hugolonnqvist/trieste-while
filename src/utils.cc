@@ -39,7 +39,7 @@ namespace whilelang {
         }
 
         if (curr == While) {
-            children.insert(curr / BExpr);
+            children.insert(curr / BAtom);
         } else if (curr == If) {
             auto then_last_nodes = get_last_basic_children(curr / Then);
             auto else_last_nodes = get_last_basic_children(curr / Else);
@@ -58,18 +58,6 @@ namespace whilelang {
         return std::stoi(text);
     }
 
-    int calc_arithmetic_op(Token op, int x, int y) {
-        if (op == Add) {
-            return x + y;
-        } else if (op == Sub) {
-            return x - y;
-        } else if (op == Mul) {
-            return x * y;
-        } else {
-            throw std::runtime_error("Not a valid operator");
-        }
-    }
-
     std::string get_identifier(const Node &node) {
         return std::string(node->location().view());
     }
@@ -80,7 +68,7 @@ namespace whilelang {
             curr = curr->parent();
         }
 
-        auto fun_id = (curr / FunId) / Ident;
+        auto fun_id = curr / FunId;
         return get_identifier(fun_id) + "-" + get_identifier(ident);
     };
 

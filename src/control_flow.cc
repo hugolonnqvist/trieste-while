@@ -47,10 +47,10 @@ namespace whilelang {
     void ControlFlow::set_functions_calls(
         std::shared_ptr<NodeSet> fun_defs, std::shared_ptr<NodeSet> fun_calls) {
         for (auto fun_call : *fun_calls) {
-            auto call_id_str = get_identifier((fun_call / FunId) / Ident);
+            auto call_id_str = get_identifier(fun_call / FunId);
 
             for (auto fun_def : *fun_defs) {
-                auto fun_def_str = get_identifier((fun_def / FunId) / Ident);
+                auto fun_def_str = get_identifier(fun_def / FunId);
                 if (call_id_str == fun_def_str) {
                     append_to_nodemap(fun_def_to_calls, fun_def, fun_call);
                     fun_call_to_def.insert({fun_call, fun_def});
@@ -59,7 +59,7 @@ namespace whilelang {
         }
 
         for (auto fun_def : *fun_defs) {
-            if (get_identifier((fun_def / FunId) / Ident) == "main") {
+            if (get_identifier(fun_def / FunId) == "main") {
                 this->program_entry = fun_def;
                 this->program_exit = get_last_basic_child(fun_def / Body);
                 return;
