@@ -36,8 +36,8 @@ namespace whilelang {
 	// Inlining
     PassDef build_call_graph(std::shared_ptr<CallGraph> call_graph);
     PassDef inlining(
-        std::shared_ptr<CallGraph> &call_graph,
-        std::shared_ptr<ControlFlow> &cfg);
+        std::shared_ptr<CallGraph> call_graph,
+        std::shared_ptr<ControlFlow> cfg);
 
 	// Compilation
 	PassDef to3addr();

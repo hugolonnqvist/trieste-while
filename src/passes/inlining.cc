@@ -5,8 +5,8 @@ namespace whilelang {
     using namespace trieste;
 
     PassDef inlining(
-        std::shared_ptr<CallGraph> &call_graph,
-        std::shared_ptr<ControlFlow> &cfg) {
+        std::shared_ptr<CallGraph> call_graph,
+        std::shared_ptr<ControlFlow> cfg) {
         // Creates assignments for the parameters of the function call
         auto assign_params = [](Node &params, Node &args) -> Node {
             Node builder = Stmt;
@@ -34,7 +34,7 @@ namespace whilelang {
                 T(Stmt)
                         << (T(Assign) << T(Ident)[Ident] *
                                 (T(AExpr) << T(FunCall)[FunCall])) >>
-                    [&](Match &_) -> Node {
+                    [=](Match &_) -> Node {
                     auto fun_call = _(FunCall);
                     auto fun_id = get_identifier((fun_call / FunId) / Ident);
 
