@@ -36,7 +36,8 @@ namespace whilelang {
                                 (T(AExpr) << T(FunCall)[FunCall])) >>
                     [=](Match &_) -> Node {
                     auto fun_call = _(FunCall);
-                    auto fun_id = get_identifier((fun_call / FunId) / Ident);
+                    auto fun_id = get_identifier(fun_call / FunId);
+
 
                     if (call_graph->can_fun_be_inlined(fun_id)) {
                         cfg->set_dirty_flag(true);
@@ -87,18 +88,19 @@ namespace whilelang {
                 },
 
                 T(Inlining) << T(If)[If] >> [](Match &_) -> Node {
-                    auto bexpr = _(If) / BExpr;
+                    auto batom = _(If) / BAtom;
                     auto then_stmt = _(If) / Then;
                     auto else_stmt = _(If) / Else;
 
-                    return If << bexpr << (Inlining << then_stmt)
+                    return If << batom << (Inlining << then_stmt)
                               << (Inlining << else_stmt);
                 },
 
                 T(Inlining) << T(While)[While] >> [](Match &_) -> Node {
-                    auto bexpr = _(While) / BExpr;
+                    auto cond_stmt = _(While) / Stmt;
+                    auto batom = _(While) / BAtom;
                     auto do_stmt = _(While) / Do;
-                    return While << bexpr << (Inlining << do_stmt);
+                    return While << (Inlining << cond_stmt) << batom << (Inlining << do_stmt);
                 },
 
                 T(Inlining) << T(Assign, Skip, Output, Var)[Stmt] >>

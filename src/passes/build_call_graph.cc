@@ -11,7 +11,7 @@ namespace whilelang {
             while (curr != FunDef) {
                 curr = curr->parent();
             }
-            return (curr / FunId) / Ident;
+            return curr / FunId;
         };
 
         PassDef pass = {
@@ -20,7 +20,7 @@ namespace whilelang {
             dir::topdown | dir::once,
             {
                 T(FunCall)[FunCall] >> [=](Match &_) -> Node {
-                    auto caller = (_(FunCall) / FunId) / Ident;
+                    auto caller = _(FunCall) / FunId;
                     auto surronding_fun = find_surronding_fun(_(FunCall));
 
                     call_graph->add_vertex(caller);
